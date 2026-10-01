@@ -84,6 +84,7 @@ pnpm --filter backend test                  # unit
 pnpm --filter backend test:e2e              # Core Hub ปลอม (JWKS + /people/me) + ฐานข้อมูลในหน่วยความจำ
 pnpm -r typecheck
 pnpm --filter backend lint
+pnpm --filter backend generate:openapi      # แก้ endpoint แล้วต้อง commit backend/openapi.json ใน PR เดียวกัน (API-01)
 ```
 
 **conformance (runtime)** — ต้องลงทะเบียนกับ Core Hub ก่อน และใช้บัญชีทดสอบจาก**ไฟล์นอก repo** เท่านั้น

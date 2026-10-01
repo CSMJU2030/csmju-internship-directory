@@ -13,7 +13,7 @@
 ```
 
 - `ARC-02/03` ข้ามในเครื่องเพราะไม่มี `jq` — dependency ของ backend เป็นชุดเดียวกับ `demo-student-subsystem` ทุกตัว ต้องดูผลจริงใน CI
-- `API-01` ข้าม (ยังไม่มี script `generate:openapi` เหมือน reference implementation)
+- `API-01` สคริปต์ข้ามในเครื่องเพราะไม่มี `jq` — รันเทียบเท่าแล้ว: `pnpm --filter backend generate:openapi` แล้ว `git diff --exit-code openapi.json` ไม่มีความต่าง
 - `QA-01..04` รันจริงด้วย pnpm แล้ว: lint ✅ · typecheck ✅ · test ✅ · build ✅
 
 ผลเทสต์:
@@ -23,6 +23,17 @@ pnpm --filter backend test       Tests: 183 passed, 183 total   (12 suites)
 pnpm --filter backend test:e2e   Tests: 119 passed, 119 total   (2 suites)
 ```
 
+ทดสอบกับของจริงในเครื่อง (PostgreSQL 16 ใน Docker + Core Hub ที่ `csmju2030.jowave.com`):
+
+```
+prisma migrate deploy + seed                  ผ่าน
+GET /api/health                               200 {status:"ok", service:"csmju-internship-directory"}
+GET /api/v1/internship-places (ไม่มี token)    401
+GET /auth/login                               302 https://csmju2030.jowave.com/sso/authorize?subsystem=csmju-internship-directory&state=…
+token ปลอม                                     401 · jwks.refresh จาก Core Hub จริง keyCount 1 kid core-hub-2026
+grep -iE "eyJ|access_token=|authorization:|cookie:" log   0 บรรทัด
+```
+
 `node standards/conformance/run.js` — **ยังไม่ได้รัน** ต้องลงทะเบียนระบบใน Core Hub ก่อน (ดูหัวข้อสุดท้าย)
 
 ## ไฟล์ที่สร้าง/แก้ไข
@@ -30,6 +41,7 @@ pnpm --filter backend test:e2e   Tests: 119 passed, 119 total   (2 suites)
 - `backend/` — คัดลอกโครงจาก `demo-student-subsystem/backend` (ลบโมดูล bookings/rooms ออก)
 - `backend/src/internship-places/` — โดเมนของระบบนี้: สถานที่ฝึกงาน รีวิว อันดับ ตัวกรอง (เขียนเอง)
 - `backend/prisma/schema.prisma` · `migrations/20261001000000_init` · `seed.ts` — ตาราง `internship_places` และ `place_reviews`
+- `backend/src/openapi/` · `backend/openapi.json` · `src/internship-places/dto/place-responses.ts` — สร้าง `openapi.json` ด้วย `@nestjs/swagger` (tech-stack.md ข้อ 3)
 - `backend/test/app.e2e-spec.ts` — คงเคส auth ของ reference ไว้ทั้งหมด และเพิ่มเคสของโดเมน
 - `backend/test/sso.e2e-spec.ts` · `core-hub.integration-spec.ts` · `helpers/in-memory-prisma.ts` · `e2e-setup.ts` — เปลี่ยนชื่อระบบและ endpoint จาก rooms/bookings เป็นของระบบนี้
 - `backend/src/config/configuration.ts` · `main.ts` · `health/health.controller.ts` · `.env.example` · `Dockerfile` — ชื่อระบบและพอร์ต
@@ -72,4 +84,3 @@ pnpm --filter backend test:e2e   Tests: 119 passed, 119 total   (2 suites)
 - **conformance ยังไม่ได้รัน** — ต้องให้ PL ลงทะเบียนระบบใน Core Hub (ตาราง role mapping ด้านบน) และได้บัญชีทดสอบจากผู้ดูแล dev server
 - **frontend ยังไม่มี** — `ui-design-system.md` ข้อ 17.0 ให้ใช้ template `csmju-subsystem-web` จาก repo `csmju-core-hub`
   แต่ `aie-workflow.md` ห้าม clone `csmju-core-hub` (มีข้อมูลนักศึกษาจริง) จึงต้องขอ template จาก PM ก่อน
-- `API-01` (openapi.json) ยังไม่มี เหมือน reference implementation
