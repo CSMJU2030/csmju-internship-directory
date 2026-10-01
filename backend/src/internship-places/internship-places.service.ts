@@ -10,6 +10,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryPlacesDto } from './dto/query-places.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { PlaceDetailDto, PlaceSummaryDto, ReviewViewDto } from './dto/place-responses';
 import {
   MJU_LOCATION,
   ScoreStats,
@@ -21,49 +22,9 @@ import {
   rankScore,
 } from './place-scoring';
 
-/** A place as the list returns it: the stored row plus figures computed from its reviews. */
-export interface PlaceSummary {
-  id: string;
-  name: string;
-  province: string;
-  latitude: number;
-  longitude: number;
-  dailyAllowanceSatang: number;
-  workHours: string | null;
-  notes: string;
-  tags: string[];
-  averageScore: number;
-  reviewCount: number;
-  /** Position in the overall ranking of the whole directory (1 = best). */
-  rank: number;
-  /** From the university, or from `nearLat`/`nearLng` when the list was asked with them. */
-  distanceKm: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
- * A review as the API returns it. The author is never named: `isMine` tells the
- * caller which one is theirs, and staff who moderate also see `personCode`.
- */
-export interface ReviewView {
-  id: string;
-  score: number;
-  comment: string;
-  position: string | null;
-  internshipYear: number | null;
-  isMine: boolean;
-  personCode?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PlaceDetail extends PlaceSummary {
-  /** Number of reviews per score, 1 to 5. */
-  scoreDistribution: Record<'1' | '2' | '3' | '4' | '5', number>;
-  reviews: ReviewView[];
-  myReviewId: string | null;
-}
+export type PlaceSummary = PlaceSummaryDto;
+export type ReviewView = ReviewViewDto;
+export type PlaceDetail = PlaceDetailDto;
 
 type ReviewScore = Pick<PlaceReview, 'placeId' | 'score'>;
 

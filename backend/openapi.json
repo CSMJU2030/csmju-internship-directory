@@ -1,0 +1,1207 @@
+{
+  "components": {
+    "schemas": {
+      "CreatePlaceDto": {
+        "properties": {
+          "dailyAllowanceSatang": {
+            "description": "Integer satang; 0 when the place pays no allowance.",
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 2,
+            "type": "string"
+          },
+          "notes": {
+            "description": "Things to watch out for and benefits.",
+            "maxLength": 600,
+            "minLength": 5,
+            "type": "string"
+          },
+          "province": {
+            "description": "Thai province name, e.g. \"เชียงใหม่\" (the word \"จังหวัด\" is dropped).",
+            "maxLength": 50,
+            "minLength": 2,
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "enum": [
+                "web",
+                "mobile",
+                "ai-data",
+                "network",
+                "uxui",
+                "testing",
+                "security",
+                "game",
+                "iot",
+                "erp"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "workHours": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "province",
+          "latitude",
+          "longitude",
+          "notes"
+        ],
+        "type": "object"
+      },
+      "CreateReviewDto": {
+        "properties": {
+          "comment": {
+            "maxLength": 1000,
+            "minLength": 5,
+            "type": "string"
+          },
+          "internshipYear": {
+            "description": "Buddhist-era year; the service rejects a year after next year.",
+            "minimum": 2540,
+            "type": "number"
+          },
+          "position": {
+            "description": "Job title during the internship, e.g. \"Frontend Developer Intern\".",
+            "maxLength": 60,
+            "minLength": 0,
+            "type": "string"
+          },
+          "score": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "number"
+          }
+        },
+        "required": [
+          "score",
+          "comment"
+        ],
+        "type": "object"
+      },
+      "DeletedDto": {
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ],
+        "type": "object"
+      },
+      "PlaceDetailDto": {
+        "properties": {
+          "averageScore": {
+            "description": "Average review score rounded to one decimal; 0 without reviews.",
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dailyAllowanceSatang": {
+            "description": "Daily allowance in satang; 0 = none.",
+            "type": "number"
+          },
+          "distanceKm": {
+            "description": "From the university, or from nearLat/nearLng when the list was asked with them.",
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "myReviewId": {
+            "description": "The caller's own review of this place, if any.",
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "description": "Things to watch out for and benefits.",
+            "type": "string"
+          },
+          "province": {
+            "description": "Thai province name without the word \"จังหวัด\".",
+            "type": "string"
+          },
+          "rank": {
+            "description": "Position in the ranking of the whole directory (1 = best).",
+            "type": "number"
+          },
+          "reviewCount": {
+            "type": "number"
+          },
+          "reviews": {
+            "description": "Newest first.",
+            "items": {
+              "$ref": "#/components/schemas/ReviewViewDto"
+            },
+            "type": "array"
+          },
+          "scoreDistribution": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ScoreDistributionDto"
+              }
+            ],
+            "description": "Number of reviews per score."
+          },
+          "tags": {
+            "description": "Keys from GET /api/v1/internship-places/tags.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workHours": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "province",
+          "latitude",
+          "longitude",
+          "dailyAllowanceSatang",
+          "workHours",
+          "notes",
+          "tags",
+          "averageScore",
+          "reviewCount",
+          "rank",
+          "distanceKm",
+          "createdAt",
+          "updatedAt",
+          "scoreDistribution",
+          "reviews",
+          "myReviewId"
+        ],
+        "type": "object"
+      },
+      "PlaceSummaryDto": {
+        "properties": {
+          "averageScore": {
+            "description": "Average review score rounded to one decimal; 0 without reviews.",
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dailyAllowanceSatang": {
+            "description": "Daily allowance in satang; 0 = none.",
+            "type": "number"
+          },
+          "distanceKm": {
+            "description": "From the university, or from nearLat/nearLng when the list was asked with them.",
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "description": "Things to watch out for and benefits.",
+            "type": "string"
+          },
+          "province": {
+            "description": "Thai province name without the word \"จังหวัด\".",
+            "type": "string"
+          },
+          "rank": {
+            "description": "Position in the ranking of the whole directory (1 = best).",
+            "type": "number"
+          },
+          "reviewCount": {
+            "type": "number"
+          },
+          "tags": {
+            "description": "Keys from GET /api/v1/internship-places/tags.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workHours": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "province",
+          "latitude",
+          "longitude",
+          "dailyAllowanceSatang",
+          "workHours",
+          "notes",
+          "tags",
+          "averageScore",
+          "reviewCount",
+          "rank",
+          "distanceKm",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PlaceTagDto": {
+        "properties": {
+          "key": {
+            "description": "Stored value, e.g. `web`.",
+            "type": "string"
+          },
+          "label": {
+            "description": "Label shown on the page, e.g. `Web Development`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label"
+        ],
+        "type": "object"
+      },
+      "ReviewViewDto": {
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "internshipYear": {
+            "description": "Buddhist-era year of the internship.",
+            "nullable": true,
+            "type": "number"
+          },
+          "isMine": {
+            "description": "Whether the caller wrote this review.",
+            "type": "boolean"
+          },
+          "personCode": {
+            "description": "Reviewer's student or staff code - returned to staff (place-review:delete:any) only.",
+            "nullable": true,
+            "type": "string"
+          },
+          "position": {
+            "nullable": true,
+            "type": "string"
+          },
+          "score": {
+            "description": "1-5 stars.",
+            "type": "number"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "score",
+          "comment",
+          "position",
+          "internshipYear",
+          "isMine",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ScoreDistributionDto": {
+        "properties": {
+          "1": {
+            "type": "number"
+          },
+          "2": {
+            "type": "number"
+          },
+          "3": {
+            "type": "number"
+          },
+          "4": {
+            "type": "number"
+          },
+          "5": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "type": "object"
+      },
+      "UpdatePlaceDto": {
+        "properties": {
+          "dailyAllowanceSatang": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 2,
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 600,
+            "minLength": 5,
+            "type": "string"
+          },
+          "province": {
+            "maxLength": 50,
+            "minLength": 2,
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "enum": [
+                "web",
+                "mobile",
+                "ai-data",
+                "network",
+                "uxui",
+                "testing",
+                "security",
+                "game",
+                "iot",
+                "erp"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "workHours": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateReviewDto": {
+        "properties": {
+          "comment": {
+            "maxLength": 1000,
+            "minLength": 5,
+            "type": "string"
+          },
+          "internshipYear": {
+            "minimum": 2540,
+            "type": "number"
+          },
+          "position": {
+            "maxLength": 60,
+            "minLength": 0,
+            "type": "string"
+          },
+          "score": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "cookie": {
+        "in": "cookie",
+        "name": "csmju_internship_directory_access_token",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "contact": {},
+    "description": "ระบบสถานที่ฝึกงาน/สหกิจศึกษา และรีวิว — ทุก endpoint ใต้ /api/v1 ต้องมี Core Hub access token (Authorization: Bearer หรือคุกกี้ session ที่ /auth/callback ตั้งให้) และตอบใน envelope { success, data, meta? }",
+    "title": "CSMJU Internship Directory API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/internship-places": {
+      "get": {
+        "operationId": "InternshipPlacesController_findAll",
+        "parameters": [
+          {
+            "description": "Matches the name, province, notes, work hours and review comments.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "province",
+            "required": false,
+            "schema": {
+              "maxLength": 50,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "allowance",
+            "required": false,
+            "schema": {
+              "enum": [
+                "paid",
+                "free"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minRating",
+            "required": false,
+            "schema": {
+              "maximum": 5,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "enum": [
+                "web",
+                "mobile",
+                "ai-data",
+                "network",
+                "uxui",
+                "testing",
+                "security",
+                "game",
+                "iot",
+                "erp"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Ranking (default), average score, allowance, review count, distance, newest or name.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "enum": [
+                "rank",
+                "rating",
+                "allowance",
+                "reviews",
+                "distance",
+                "newest",
+                "name"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Measure `distanceKm` from here instead of the university (both or neither).",
+            "in": "query",
+            "name": "nearLat",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nearLng",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/PlaceSummaryDto"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ],
+                      "type": "object"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "internship-places"
+        ]
+      },
+      "post": {
+        "operationId": "InternshipPlacesController_create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlaceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PlaceDetailDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "internship-places"
+        ]
+      }
+    },
+    "/api/v1/internship-places/tags": {
+      "get": {
+        "operationId": "InternshipPlacesController_tags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/PlaceTagDto"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ],
+                      "type": "object"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "The closed list of fields of work - declared before :id so it is not read as an id.",
+        "tags": [
+          "internship-places"
+        ]
+      }
+    },
+    "/api/v1/internship-places/{id}": {
+      "delete": {
+        "operationId": "InternshipPlacesController_remove",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeletedDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "internship-places"
+        ]
+      },
+      "get": {
+        "operationId": "InternshipPlacesController_findOne",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PlaceDetailDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "internship-places"
+        ]
+      },
+      "patch": {
+        "operationId": "InternshipPlacesController_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlaceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PlaceDetailDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "internship-places"
+        ]
+      }
+    },
+    "/api/v1/internship-places/{placeId}/reviews": {
+      "post": {
+        "operationId": "PlaceReviewsController_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "placeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReviewViewDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "place-reviews"
+        ]
+      }
+    },
+    "/api/v1/internship-places/{placeId}/reviews/{reviewId}": {
+      "delete": {
+        "operationId": "PlaceReviewsController_remove",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "placeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeletedDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "place-reviews"
+        ]
+      },
+      "patch": {
+        "operationId": "PlaceReviewsController_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "placeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReviewViewDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "place-reviews"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "MeController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/auth/callback": {
+      "get": {
+        "operationId": "SsoController_callback",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "access_token",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token_type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "Bearer",
+                "bearer"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expires_in",
+            "required": false,
+            "schema": {
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Where Core Hub sends the browser with a token. The answers follow the\ntable of auth-contract 5.1, in its order:\n\n - no `access_token`: 400.\n - no `state`: Core Hub started this sign-in itself, e.g. a sidebar click.\n   The token is dropped unused and the browser restarts at /auth/login,\n   which comes back here with a state this subsystem can check. A link\n   carrying an attacker's token therefore signs the victim in as the\n   victim, never as the attacker.\n - a `state` without a matching state cookie: 401, and no redirect - if\n   the browser refuses cookies, redirecting again would loop forever. A\n   browser gets a page with a \"sign in again\" link instead of raw JSON.\n - a token that fails the ten checks: 401 · a role this subsystem does\n   not accept: 403.\n - otherwise the token becomes the session cookie and the browser goes\n   to the page it started from.\n\nNo failure sets the session cookie. The URL carries the access token, so\nit is never logged - only the path.",
+        "tags": [
+          "Sso"
+        ]
+      }
+    },
+    "/auth/login": {
+      "get": {
+        "operationId": "SsoController_login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Starts a sign-in: mints a single-use state, keeps it (with the page to\nreturn to) in a cookie only the callback receives, and sends the browser\nto Core Hub's web app, which signs the user in or renews their session.\n\nNo callback_url is sent: Core Hub only ever redirects to the one in its\nregistry, and refuses a different one with 400.",
+        "tags": [
+          "Sso"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "SsoController_logout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Signs out everywhere. Dropping only this subsystem's cookies would be\nundone by the next click, which Core Hub - still signed in - would answer\nwith a fresh token. So the browser goes on to Core Hub's /logout, where\nthe user confirms ending the Core Hub session.\n\nPublic on purpose: it must work with an expired or missing session, and\nall it does is clear this subsystem's own cookies.",
+        "tags": [
+          "Sso"
+        ]
+      }
+    }
+  },
+  "servers": [],
+  "tags": []
+}
