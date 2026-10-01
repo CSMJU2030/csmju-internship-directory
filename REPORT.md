@@ -82,5 +82,9 @@ grep -iE "eyJ|access_token=|authorization:|cookie:" log   0 บรรทัด
 ## สิ่งที่ยังทำไม่ได้ / เคสที่ยังไม่ผ่าน
 
 - **conformance ยังไม่ได้รัน** — ต้องให้ PL ลงทะเบียนระบบใน Core Hub (ตาราง role mapping ด้านบน) และได้บัญชีทดสอบจากผู้ดูแล dev server
-- **frontend ยังไม่มี** — `ui-design-system.md` ข้อ 17.0 ให้ใช้ template `csmju-subsystem-web` จาก repo `csmju-core-hub`
-  แต่ `aie-workflow.md` ห้าม clone `csmju-core-hub` (มีข้อมูลนักศึกษาจริง) จึงต้องขอ template จาก PM ก่อน
+- **frontend ยังไม่ได้ใช้ `@csmju2030/design-system` / `<CsmjuAppShell>`** — v1.3.0 ของ package ทำ auth ตาม standards 1.3
+  (`/oauth/token` · `/auth/refresh` · token ใน memory · `per_page`) ซึ่ง Core Hub จริงและ standards 1.7 ไม่มี
+  AppShell ยิง `POST /auth/refresh` ทุกครั้งที่หน้าโหลด ใช้แล้ว SSO จะพัง — frontend จึงใช้โครงของ `demo-student-subsystem`
+  (Shell ชั่วคราว + CSS token ใน `globals.css`) ไปก่อน รอ PM ยืนยันแนวทาง
+- **map picker ทดสอบในเบราว์เซอร์ที่ซ่อนอยู่ไม่ได้** — หน้าเพิ่มสถานที่ส่งฟอร์มได้จริง (server action ทำงานแม้ JS ยังไม่ hydrate)
+  แต่การคลิกปักหมุดบนแผนที่ต้องทดสอบด้วยตาบนเบราว์เซอร์จริงและมือถือ 360px

@@ -16,7 +16,8 @@ Internship Directory — **ระบบสถานที่ฝึกงาน/�
 ## สถานะ
 
 - ✅ **backend** (NestJS 11 + Prisma 7.9.1) — สถานที่ฝึกงาน รีวิว อันดับ ตัวกรอง ชั้น auth คัดลอกจาก `demo-student-subsystem`
-- ⏳ **frontend** (Next.js) — รอ template `csmju-subsystem-web` จาก PM (`ui-design-system.md` ข้อ 17.0)
+- 🟡 **frontend** (Next.js 16) — หน้าครบ (รายการ+แผนที่ · รายละเอียด+รีวิว · เพิ่ม/แก้ไขสถานที่) โครงและ SSO ตาม `demo-student-subsystem`
+  หน้าตายังเป็นชั่วคราว: `@csmju2030/design-system` v1.3.0 ใช้ auth คนละแบบกับ standards 1.7 (ดู REPORT.md) — รอ PM ยืนยันก่อนเปลี่ยนไปใช้ `<CsmjuAppShell>`
 - ⏳ **ลงทะเบียนกับ Core Hub** และ **conformance** — ต้องใช้บัญชีเจ้าของระบบของทีม (PL ทำ)
 
 ## โครงสร้าง
@@ -24,7 +25,7 @@ Internship Directory — **ระบบสถานที่ฝึกงาน/�
 ```text
 csmju-internship-directory/
 ├── backend/           NestJS 11 + Prisma 7.9.1 — พอร์ต 4218
-├── frontend/          (ยังไม่มี) Next.js App Router — พอร์ต 3218 ประตูเดียวของระบบย่อย
+├── frontend/          Next.js 16 App Router — พอร์ต 3218 ประตูเดียวของระบบย่อย (proxy /api/* และ /auth/* ไป backend)
 ├── standards/         git submodule → csmju2030-standards
 ├── subsystem.yaml     manifest ที่ CI และ conformance อ่าน
 ├── .standards-version
@@ -45,8 +46,11 @@ docker compose up -d csmju-internship-directory-db   # PostgreSQL พอร์�
 pnpm --filter backend prisma:deploy
 pnpm --filter backend prisma:seed              # สถานที่ตัวอย่าง 3 แห่ง
 
-pnpm start:dev                                 # backend :4218
+cp frontend/.env.example frontend/.env.local
+pnpm dev                                       # backend :4218 + frontend :3218
 ```
+
+เปิด **http://localhost:3218** (ต้องเป็น `localhost` ตรงกับ callback ที่ลงทะเบียน ไม่ใช่ 127.0.0.1)
 
 เปิดงานใหม่ทุกครั้งให้แตก branch จาก `main` ตามรูปแบบ `feature/internship-directory/<เรื่องที่ทำ>`
 และอ่าน `standards/docs/github-workflow.md` ข้อ 1 ก่อนเปิด PR
@@ -84,7 +88,8 @@ pnpm --filter backend test                  # unit
 pnpm --filter backend test:e2e              # Core Hub ปลอม (JWKS + /people/me) + ฐานข้อมูลในหน่วยความจำ
 pnpm -r typecheck
 pnpm --filter backend lint
-pnpm --filter backend generate:openapi      # แก้ endpoint แล้วต้อง commit backend/openapi.json ใน PR เดียวกัน (API-01)
+pnpm generate:openapi                       # แก้ endpoint แล้วต้อง commit backend/openapi.json + frontend/src/lib/api-types.ts ใน PR เดียวกัน (API-01)
+rm -rf frontend/.next && pnpm --filter frontend typecheck && pnpm --filter frontend build
 ```
 
 **conformance (runtime)** — ต้องลงทะเบียนกับ Core Hub ก่อน และใช้บัญชีทดสอบจาก**ไฟล์นอก repo** เท่านั้น
