@@ -65,12 +65,11 @@ pnpm --filter backend test:e2e   Tests: 119 passed, 119 total   (2 suites)
 3. ชื่อซ้ำตรวจด้วย `name_key` (ตัวพิมพ์เล็ก ตัดคำว่าบริษัท/จำกัด/Co., Ltd. ช่องว่าง และวรรคตอน) ซึ่งเป็น unique
 3.1 1 คน 1 รีวิวต่อสถานที่ ตรวจใน service ไม่ใช้ unique key เพราะ reference-data.md ข้อ 8 ให้ `core_user_id` เป็น index ที่ไม่ unique
 4. ADMIN ลบรีวิวของคนอื่นได้ แต่แก้ข้อความรีวิวของคนอื่นไม่ได้ (กันการแก้คำพูดของผู้รีวิว)
-5. พอร์ต 3240/4240/5440 เป็นค่าชั่วคราวจนกว่าผู้ดูแล dev server จะกำหนดให้
+5. พอร์ต 3218/4218 ตามที่ผู้ดูแล dev server กำหนด · PostgreSQL ใช้ 5440 (เลือกเอง ไม่ชน 5432)
 
 ## สิ่งที่ยังทำไม่ได้ / เคสที่ยังไม่ผ่าน
 
 - **conformance ยังไม่ได้รัน** — ต้องให้ PL ลงทะเบียนระบบใน Core Hub (ตาราง role mapping ด้านบน) และได้บัญชีทดสอบจากผู้ดูแล dev server
 - **frontend ยังไม่มี** — `ui-design-system.md` ข้อ 17.0 ให้ใช้ template `csmju-subsystem-web` จาก repo `csmju-core-hub`
   แต่ `aie-workflow.md` ห้าม clone `csmju-core-hub` (มีข้อมูลนักศึกษาจริง) จึงต้องขอ template จาก PM ก่อน
-- **พอร์ตของทีม** ยังไม่ได้รับจากผู้ดูแล dev server
 - `API-01` (openapi.json) ยังไม่มี เหมือน reference implementation

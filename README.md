@@ -23,15 +23,15 @@ Internship Directory — **ระบบสถานที่ฝึกงาน/�
 
 ```text
 csmju-internship-directory/
-├── backend/           NestJS 11 + Prisma 7.9.1 — พอร์ต 4240 (ชั่วคราว)
-├── frontend/          (ยังไม่มี) Next.js App Router — พอร์ต 3240 (ชั่วคราว) ประตูเดียวของระบบย่อย
+├── backend/           NestJS 11 + Prisma 7.9.1 — พอร์ต 4218
+├── frontend/          (ยังไม่มี) Next.js App Router — พอร์ต 3218 ประตูเดียวของระบบย่อย
 ├── standards/         git submodule → csmju2030-standards
 ├── subsystem.yaml     manifest ที่ CI และ conformance อ่าน
 ├── .standards-version
 └── docker-compose.yml PostgreSQL ของระบบย่อยเอง (พอร์ต 5440) + backend
 ```
 
-> พอร์ต 3240/4240/5440 เป็นค่าชั่วคราว — เปลี่ยนเป็นพอร์ต 32xx/42xx ที่ผู้ดูแล dev server กำหนดให้ทีม
+> พอร์ต frontend 3218 · backend 4218 ตามที่ผู้ดูแล dev server กำหนดให้ทีม · PostgreSQL 5440 เลือกเองให้ไม่ชนกับ 5432
 > (`subsystem.yaml`, `backend/.env.example`, `docker-compose.yml`, `backend/Dockerfile`)
 
 ## เริ่มทำงาน
@@ -45,7 +45,7 @@ docker compose up -d csmju-internship-directory-db   # PostgreSQL พอร์�
 pnpm --filter backend prisma:deploy
 pnpm --filter backend prisma:seed              # สถานที่ตัวอย่าง 3 แห่ง
 
-pnpm start:dev                                 # backend :4240
+pnpm start:dev                                 # backend :4218
 ```
 
 เปิดงานใหม่ทุกครั้งให้แตก branch จาก `main` ตามรูปแบบ `feature/internship-directory/<เรื่องที่ทำ>`
@@ -103,6 +103,6 @@ login `https://csmju2030.jowave.com` ด้วยบัญชีเจ้าข�
 | ชื่อที่แสดง | `Internship Directory` |
 | Repository | `github.com/CSMJU2030/csmju-internship-directory` |
 | Standards version | `1.0` (ตัวเลือกเดียวของฟอร์ม) |
-| Callback URL | `http://localhost:<พอร์ต frontend>/auth/callback` |
+| Callback URL | `http://localhost:3218/auth/callback` |
 | Base URL | เว้นว่าง |
 | บทบาท | student→`STUDENT` · alumni→`ALUMNI` · staff→`STAFF` · lecturer→`STAFF` · guest→`VIEWER` · admin→`ADMIN` |

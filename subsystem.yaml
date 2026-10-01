@@ -8,8 +8,8 @@ name: csmju-internship-directory      # ตรงกับทะเบียน�
 conformance_level: L3                 # ระบบที่มี UI ต้องถึง L3
 
 # frontend (Next.js) เป็นประตูเดียว: ส่ง /api/* และ /auth/login /auth/callback /auth/logout ต่อไปที่ backend
-# TODO(พอร์ต): 3240/4240 เป็นค่าชั่วคราว — เปลี่ยนเป็นพอร์ต 32xx/42xx ที่ผู้ดูแล dev server กำหนดให้ทีม
-base_url: http://localhost:3240       # พอร์ต frontend · localhost ไม่ใช่ 127.0.0.1
+# พอร์ตที่ผู้ดูแล dev server กำหนดให้ทีม: frontend 3218 · backend 4218
+base_url: http://localhost:3218       # พอร์ต frontend · localhost ไม่ใช่ 127.0.0.1
 core_hub_url: https://csmju2030.jowave.com       # Core Hub จริง (API อยู่ใต้ /api/v1)
 core_hub_web_url: https://csmju2030.jowave.com   # เว็บที่ /auth/login และ /auth/logout ส่งเบราว์เซอร์ไป
 callback_path: /auth/callback         # base_url + callback_path = Callback URL ที่ลงทะเบียน

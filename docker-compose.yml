@@ -31,7 +31,7 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: ${NODE_ENV:-development}
-      PORT: 4240
+      PORT: 4218
       DATABASE_URL: postgresql://postgres:postgres@csmju-internship-directory-db:5432/csmju_internship_directory
       CORE_HUB_URL: ${CORE_HUB_URL:-https://csmju2030.jowave.com}
       CORE_HUB_JWKS_URL: ${CORE_HUB_JWKS_URL:-https://csmju2030.jowave.com/api/v1/.well-known/jwks.json}
@@ -42,14 +42,14 @@ services:
       SUBSYSTEM_ID: ${SUBSYSTEM_ID:-csmju-internship-directory}
       SUBSYSTEM_NAME: ${SUBSYSTEM_NAME:-CSMJU Internship Directory}
     ports:
-      - '4240:4240'
+      - '4218:4218'
     healthcheck:
       test:
         [
           'CMD',
           'node',
           '-e',
-          "fetch('http://127.0.0.1:4240/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:4218/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 10s
       timeout: 5s
