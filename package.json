@@ -1,5 +1,22 @@
 {
   "name": "csmju-internship-directory",
+  "version": "0.1.0",
   "private": true,
+  "description": "CSMJU Internship Directory - ระบบสถานที่ฝึกงาน/สหกิจศึกษาและรีวิว (ระบบย่อยของ CSMJU2030)",
+  "scripts": {
+    "start:dev": "pnpm --filter backend start:dev",
+    "build": "pnpm --filter backend build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter backend test",
+    "test:e2e": "pnpm --filter backend test:e2e",
+    "prisma:migrate": "pnpm --filter backend prisma:migrate",
+    "prisma:seed": "pnpm --filter backend prisma:seed",
+    "conformance": "node standards/conformance/run.js",
+    "checks": "./standards/scripts/run-all-checks.sh ."
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@9.15.9"
 }
