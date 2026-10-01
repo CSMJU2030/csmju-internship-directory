@@ -81,7 +81,9 @@ model PlaceReview {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([placeId, coreUserId])
+  /// One review per person per place is enforced by the service, not a unique
+  /// key: reference-data.md 8 keeps core_user_id indexed but never unique.
+  @@index([placeId, coreUserId])
   @@index([coreUserId])
   @@map("place_reviews")
 }

@@ -209,7 +209,7 @@ export class InMemoryPrisma {
     tags: [],
   }));
 
-  placeReview = new Table([], [['placeId', 'coreUserId']], () => ({
+  placeReview = new Table([], [], () => ({
     personCode: null,
     position: null,
     internshipYear: null,

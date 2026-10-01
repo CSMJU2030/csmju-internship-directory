@@ -46,7 +46,7 @@ CREATE INDEX "internship_places_province_idx" ON "internship_places"("province")
 CREATE INDEX "place_reviews_core_user_id_idx" ON "place_reviews"("core_user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "place_reviews_place_id_core_user_id_key" ON "place_reviews"("place_id", "core_user_id");
+CREATE INDEX "place_reviews_place_id_core_user_id_idx" ON "place_reviews"("place_id", "core_user_id");
 
 -- AddForeignKey
 ALTER TABLE "place_reviews" ADD CONSTRAINT "place_reviews_place_id_fkey" FOREIGN KEY ("place_id") REFERENCES "internship_places"("id") ON DELETE CASCADE ON UPDATE CASCADE;
