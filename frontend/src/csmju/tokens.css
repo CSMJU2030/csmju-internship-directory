@@ -1,0 +1,211 @@
+/*
+ * Copied verbatim from @csmju2030/design-system v1.3.0 (src/styles/tokens.css,
+ * github.com/CSMJU2030/design-system@37b4348) while the package cannot be used
+ * as a whole (its auth targets standards 1.3 - see REPORT.md).
+ * Do not edit here (ui-design-system.md 17.0): replace this folder with the
+ * package once it matches standards 1.7.
+ */
+/**
+ * @csmju2030/design-system — Design Tokens
+ * อ้างอิง ui-design-system.md §3 (v1.2.0)
+ *
+ * 🔴 ห้ามแก้ไฟล์นี้ในระบบย่อย และห้าม override ค่าเหล่านี้
+ *    ถ้าต้องการค่าใหม่ ให้ทำตามกระบวนการ §17.4 (component/token request)
+ */
+
+:root {
+  /* ---------- §3.1 สี: Brand ---------- */
+  --csmju-color-primary: #004c99;
+  --csmju-color-primary-hover: #003d7a;
+  --csmju-color-primary-active: #002e5c;
+  --csmju-color-primary-soft: #e6f2ff;
+  --csmju-color-primary-soft-hover: #d3e7fc;
+  --csmju-color-focus-ring: #93c5fd;
+
+  /* ---------- §3.1 สี: พื้นผิว ---------- */
+  --csmju-color-canvas: #f1f5fb;
+  --csmju-color-surface: #ffffff;
+  --csmju-color-surface-muted: #f8fafc;
+  --csmju-color-surface-inverse: #0f172a;
+
+  /* ---------- §3.1 สี: ข้อความ ---------- */
+  --csmju-color-text: #0f172a;
+  --csmju-color-text-body: #334155;
+  --csmju-color-text-muted: #64748b;
+  --csmju-color-text-inverse: #f8fafc;
+
+  /* ---------- §3.1 สี: เส้นขอบ ---------- */
+  --csmju-color-border: #e2e8f0;
+  --csmju-color-border-strong: #cbd5e1;
+
+  /* ---------- §3.1 สี: สถานะ (semantic) — มี 3 ระดับเสมอ ---------- */
+  --csmju-color-success-text: #15803d;
+  --csmju-color-success-bg: #dcfce7;
+  --csmju-color-success-border: #86efac;
+
+  --csmju-color-warning-text: #b45309;
+  --csmju-color-warning-bg: #fef3c7;
+  --csmju-color-warning-border: #fcd34d;
+
+  --csmju-color-danger-text: #b91c1c;
+  --csmju-color-danger-bg: #fee2e2;
+  --csmju-color-danger-border: #fca5a5;
+
+  --csmju-color-info-text: #004c99;
+  --csmju-color-info-bg: #e6f2ff;
+  --csmju-color-info-border: #93c5fd;
+
+  /* ---------- §3.2 Spacing (ระบบ 8pt) ---------- */
+  --csmju-space-1: 4px;
+  --csmju-space-2: 8px;
+  --csmju-space-3: 12px;
+  --csmju-space-4: 16px;
+  --csmju-space-5: 20px;
+  --csmju-space-6: 24px;
+  --csmju-space-8: 32px;
+  --csmju-space-10: 40px;
+  --csmju-space-12: 48px;
+  --csmju-space-16: 64px;
+  --csmju-space-20: 80px;
+
+  /* ---------- §3.3 Border radius ---------- */
+  --csmju-radius-sm: 8px;
+  --csmju-radius-md: 12px;
+  --csmju-radius-lg: 16px;
+  --csmju-radius-xl: 24px;
+  --csmju-radius-full: 9999px;
+
+  /* ---------- §3.4 Elevation ---------- */
+  --csmju-shadow-none: none;
+  --csmju-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --csmju-shadow-md: 0 4px 20px rgba(0, 76, 153, 0.08);
+  --csmju-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+
+  /* ---------- §3.5 Z-index (ห้ามใส่ 9999 ที่อื่น) ---------- */
+  --csmju-z-base: 0;
+  --csmju-z-sticky: 100;
+  --csmju-z-header: 200;
+  --csmju-z-drawer: 300;
+  --csmju-z-modal: 400;
+  --csmju-z-popover: 500;
+  --csmju-z-toast: 600;
+
+  /* ---------- §3.6 Motion ---------- */
+  --csmju-duration-fast: 150ms;
+  --csmju-duration-base: 200ms;
+  --csmju-duration-slow: 300ms;
+  --csmju-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --csmju-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* ---------- §4.1 Typography: font stack ---------- */
+  --csmju-font-heading: "Plus Jakarta Sans Variable", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --csmju-font-body: "Inter Variable", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --csmju-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* ---------- §4.2 Type scale (desktop) ---------- */
+  --csmju-text-display: 40px;
+  --csmju-text-display-lh: 1.35;
+  --csmju-text-h1: 30px;
+  --csmju-text-h1-lh: 1.4;
+  --csmju-text-h2: 24px;
+  --csmju-text-h2-lh: 1.45;
+  --csmju-text-h3: 20px;
+  --csmju-text-h3-lh: 1.5;
+  --csmju-text-h4: 18px;
+  --csmju-text-h4-lh: 1.5;
+  --csmju-text-body-lg: 18px;
+  --csmju-text-body-lg-lh: 1.7;
+  --csmju-text-body: 16px;
+  --csmju-text-body-lh: 1.65;
+  --csmju-text-body-sm: 14px;
+  --csmju-text-body-sm-lh: 1.6;
+  --csmju-text-caption: 12px;
+  --csmju-text-caption-lh: 1.6;
+  --csmju-text-overline: 12px;
+  --csmju-text-overline-lh: 1.5;
+
+  /* ---------- §5 Layout ---------- */
+  --csmju-container-max: 1280px;
+  --csmju-header-height: 64px;
+  --csmju-sidebar-width: 240px;
+  --csmju-sidebar-width-collapsed: 72px;
+  --csmju-touch-target: 44px;
+
+  /* ---------- §3.8 Chart palette (ใช้เฉพาะกราฟ ห้ามสลับลำดับ) ---------- */
+  --csmju-chart-1: #004c99;
+  --csmju-chart-2: #0ea5e9;
+  --csmju-chart-3: #14b8a6;
+  --csmju-chart-4: #8b5cf6;
+  --csmju-chart-5: #f59e0b;
+  --csmju-chart-6: #64748b;
+}
+
+/* ---------- §4.2 Type scale (mobile) ---------- */
+@media (max-width: 639px) {
+  :root {
+    --csmju-text-display: 30px;
+    --csmju-text-h1: 24px;
+    --csmju-text-h2: 20px;
+    --csmju-text-h3: 18px;
+    --csmju-text-h4: 16px;
+    --csmju-text-body-lg: 16px;
+  }
+}
+
+/**
+ * ---------- §13 Dark mode 🟢 (ทางเลือก) ----------
+ * เปิดใช้ด้วย <html data-csmju-theme="dark"> หรือปล่อยให้ตามระบบด้วย data-csmju-theme="auto"
+ * ❌ ห้าม filter: invert  ❌ ห้าม #000000
+ */
+:root[data-csmju-theme="dark"] {
+  --csmju-color-canvas: #0b1220;
+  --csmju-color-surface: #111c2e;
+  --csmju-color-surface-muted: #1a2740;
+  --csmju-color-surface-inverse: #f8fafc;
+  --csmju-color-border: #243449;
+  --csmju-color-border-strong: #33475f;
+  --csmju-color-text: #f8fafc;
+  --csmju-color-text-body: #cbd5e1;
+  --csmju-color-text-muted: #94a3b8;
+  --csmju-color-text-inverse: #0b1220;
+  --csmju-color-primary: #60a5fa;
+  --csmju-color-primary-hover: #7db6fb;
+  --csmju-color-primary-active: #93c5fd;
+  --csmju-color-primary-soft: #132c4d;
+  --csmju-color-primary-soft-hover: #1b3c68;
+  --csmju-color-info-text: #93c5fd;
+  --csmju-color-info-bg: #132c4d;
+  --csmju-color-success-bg: #10281a;
+  --csmju-color-success-text: #86efac;
+  --csmju-color-warning-bg: #2c2008;
+  --csmju-color-warning-text: #fcd34d;
+  --csmju-color-danger-bg: #2d1213;
+  --csmju-color-danger-text: #fca5a5;
+  /* §13: เงาใน dark mode ต้องลดลงและใช้เส้นขอบแทน */
+  --csmju-shadow-sm: none;
+  --csmju-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --csmju-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-csmju-theme="auto"] {
+    --csmju-color-canvas: #0b1220;
+    --csmju-color-surface: #111c2e;
+    --csmju-color-surface-muted: #1a2740;
+    --csmju-color-surface-inverse: #f8fafc;
+    --csmju-color-border: #243449;
+    --csmju-color-border-strong: #33475f;
+    --csmju-color-text: #f8fafc;
+    --csmju-color-text-body: #cbd5e1;
+    --csmju-color-text-muted: #94a3b8;
+    --csmju-color-text-inverse: #0b1220;
+    --csmju-color-primary: #60a5fa;
+    --csmju-color-primary-hover: #7db6fb;
+    --csmju-color-primary-active: #93c5fd;
+    --csmju-color-primary-soft: #132c4d;
+    --csmju-color-primary-soft-hover: #1b3c68;
+    --csmju-color-info-text: #93c5fd;
+    --csmju-color-info-bg: #132c4d;
+    --csmju-shadow-sm: none;
+  }
+}

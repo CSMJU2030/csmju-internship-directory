@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MapPinned, SearchX } from "lucide-react";
 import Link from "next/link";
 import PlacesMap from "../components/features/PlacesMap";
 import Stars from "../components/features/Stars";
@@ -133,13 +134,23 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <p className="alert" role="alert">
           {describeError(places.code, places.message)}
         </p>
-      ) : places.data.length === 0 ? (
+      ) : places.data.length === 0 && filtered ? (
         <section className="card empty">
+          <SearchX className="empty-icon" size={40} aria-hidden="true" />
           <h2>ไม่พบสถานที่ฝึกงานตรงตามเงื่อนไข</h2>
           <p className="muted">ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง</p>
-          {filtered && (
-            <Link className="btn btn-secondary" href="/">
-              ล้างตัวกรอง
+          <Link className="btn btn-secondary" href="/">
+            ล้างตัวกรอง
+          </Link>
+        </section>
+      ) : places.data.length === 0 ? (
+        <section className="card empty">
+          <MapPinned className="empty-icon" size={40} aria-hidden="true" />
+          <h2>ยังไม่มีสถานที่ฝึกงาน</h2>
+          <p className="muted">เพิ่มที่ที่เคยฝึกงานพร้อมรีวิว เพื่อช่วยรุ่นน้องเลือกที่ฝึกงาน</p>
+          {can.addPlace(me.data) && (
+            <Link className="btn btn-primary" href="/internship-places/new">
+              เพิ่มสถานที่ฝึกงาน
             </Link>
           )}
         </section>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Toast from "../../components/shared/Toast";
 import { can, type Me } from "../../lib/api";
 
 type NavKey = "places" | "new";
@@ -73,7 +74,7 @@ export default function Shell({ me, active, children }: { me: Me; active?: NavKe
   );
 }
 
-/** Result of the last form action, passed back as ?ok= / ?error=. */
+/** Result of the last form action, passed back as ?ok= / ?error=: errors stay on the page, success is a toast. */
 export function Flash({ ok, error }: { ok?: string; error?: string }) {
   if (error) {
     return (
@@ -82,12 +83,6 @@ export function Flash({ ok, error }: { ok?: string; error?: string }) {
       </p>
     );
   }
-  if (ok) {
-    return (
-      <p className="alert alert-ok" role="status">
-        {ok}
-      </p>
-    );
-  }
+  if (ok) return <Toast message={ok} />;
   return null;
 }

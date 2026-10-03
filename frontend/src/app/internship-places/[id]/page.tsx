@@ -132,11 +132,13 @@ export default async function PlacePage({
         {can.managePlaces(me.data) && (
           <details className="danger-zone">
             <summary>ลบสถานที่นี้</summary>
-            <p>สถานที่และรีวิวทั้งหมด {p.reviewCount} รายการจะถูกลบ และกู้คืนไม่ได้</p>
+            <p>
+              ลบ &ldquo;{p.name}&rdquo;? สถานที่และรีวิวทั้งหมด {p.reviewCount} รายการจะถูกลบ และกู้คืนไม่ได้
+            </p>
             <form action={deletePlace}>
               <input type="hidden" name="id" value={p.id} />
               <button className="btn btn-danger btn-sm" type="submit">
-                ลบ
+                ลบสถานที่
               </button>
             </form>
           </details>
@@ -181,11 +183,12 @@ export default async function PlacePage({
                 {(review.isMine || can.moderateReviews(me.data)) && (
                   <details className="danger-zone">
                     <summary>ลบรีวิวนี้</summary>
+                    <p>ลบรีวิวนี้? กู้คืนไม่ได้</p>
                     <form action={deleteReview}>
                       <input type="hidden" name="placeId" value={p.id} />
                       <input type="hidden" name="reviewId" value={review.id} />
                       <button className="btn btn-danger btn-sm" type="submit">
-                        ลบ
+                        ลบรีวิว
                       </button>
                     </form>
                   </details>

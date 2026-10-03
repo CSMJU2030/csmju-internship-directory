@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Thai, Plus_Jakarta_Sans } from "next/font/google";
+import { IBM_Plex_Sans_Thai, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 // Self-hosted at build time by next/font - no request to Google from the browser (ui-design-system.md 4.1).
-const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
-const notoSansThai = Noto_Sans_Thai({ variable: "--font-noto-thai", subsets: ["latin", "thai"], weight: ["400", "500", "600", "700"] });
+// Same families as @csmju2030/design-system: Inter for body, Plus Jakarta Sans for headings, IBM Plex Sans Thai for Thai.
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["600", "700"] });
+const plexThai = IBM_Plex_Sans_Thai({ variable: "--font-plex-thai", subsets: ["thai"], weight: ["400", "500", "600"] });
 
 export const metadata: Metadata = {
   title: "ระบบสถานที่ฝึกงาน · CSMJU",
@@ -13,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th" className={`${jakarta.variable} ${notoSansThai.variable}`}>
+    <html lang="th" className={`${inter.variable} ${jakarta.variable} ${plexThai.variable}`}>
       <body>{children}</body>
     </html>
   );
