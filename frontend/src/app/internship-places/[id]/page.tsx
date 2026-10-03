@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowBackIcon, EditIcon, LocationIcon } from "@/csmju";
+import DeleteButton from "../../../components/features/DeleteButton";
 import { ReviewFields } from "../../../components/features/ReviewForm";
 import Stars from "../../../components/features/Stars";
+import { OpenInNewIcon } from "../../../components/icons";
+import { card, link, muted, pageTitle, primaryButton, secondaryButton, sectionTitle, small } from "../../../components/ui";
 import { can, getMe, getPlace, hasSession, isUnauthorized, listTags } from "../../../lib/api";
 import {
   describeError,
@@ -14,8 +18,8 @@ import {
   provinceLabel,
 } from "../../../lib/format";
 import { deletePlace, deleteReview, saveReview } from "../../actions";
+import Flash from "../../_components/Flash";
 import ReSignIn from "../../_components/ReSignIn";
-import Shell, { Flash } from "../../_components/Shell";
 import SignedOut from "../../_components/SignedOut";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +28,7 @@ type Params = { id: string };
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const place = await getPlace((await params).id);
-  return { title: `${place.ok ? place.data.name : "รายละเอียดสถานที่"} · ระบบสถานที่ฝึกงาน · CSMJU` };
+  return { title: place.ok ? place.data.name : "รายละเอียดสถานที่" };
 }
 
 export default async function PlacePage({
@@ -55,105 +59,103 @@ export default async function PlacePage({
   const scores = [5, 4, 3, 2, 1] as const;
 
   return (
-    <Shell me={me.data}>
-      <Link href="/" className="back-link">
+    <>
+      <Link href="/" className={link}>
+        <ArrowBackIcon className="h-4 w-4" />
         กลับไปที่รายการ
       </Link>
 
-      <div className="page-head">
-        <h1>{p.name}</h1>
-        <p className="muted">
-          {provinceLabel(p.province)} · ห่าง ม.แม่โจ้ {formatKm(p.distanceKm)} · อันดับ{" "}
-          <span className="tabular">#{p.rank}</span>
+      <div className="fade-slide-up">
+        <h1 className={`${pageTitle} mb-2 break-words`}>{p.name}</h1>
+        <p className={muted}>
+          {provinceLabel(p.province)} · ห่าง ม.แม่โจ้ {formatKm(p.distanceKm)} · อันดับ <span className="tabular-nums">#{p.rank}</span>
         </p>
       </div>
 
       <Flash ok={ok} error={error} />
 
-      <section className="card detail-grid">
+      <section className={`${card} grid gap-8 md:grid-cols-2`}>
         <div>
-          <h2>คะแนน</h2>
+          <h2 className={sectionTitle}>คะแนน</h2>
           {p.reviewCount > 0 ? (
-            <p>
-              <Stars score={p.averageScore} />{" "}
-              <span className="tabular">
+            <p className="mb-4 flex items-center gap-2">
+              <Stars score={p.averageScore} />
+              <span className="text-body-md tabular-nums text-on-surface">
                 {p.averageScore.toLocaleString("th-TH", { maximumFractionDigits: 1 })}/5 · {p.reviewCount} รีวิว
               </span>
             </p>
           ) : (
-            <p className="muted">ยังไม่มีรีวิว</p>
+            <p className={muted}>ยังไม่มีรีวิว</p>
           )}
           {p.reviewCount > 0 && (
-            <ul className="distribution" aria-label="จำนวนรีวิวแต่ละระดับคะแนน">
+            <ul className="space-y-1.5" aria-label="จำนวนรีวิวแต่ละระดับคะแนน">
               {scores.map((score) => {
                 const count = p.scoreDistribution[score];
                 return (
-                  <li key={score}>
-                    <span className="tabular">{score} ดาว</span>
-                    <span className="bar" aria-hidden="true">
+                  <li key={score} className={`${small} grid grid-cols-6 items-center gap-2`}>
+                    <span className="tabular-nums">{score} ดาว</span>
+                    <span className="col-span-4 h-2 overflow-hidden rounded-full bg-surface-variant" aria-hidden="true">
                       {/* Width is computed at runtime - the only inline style allowed (ui-design-system 16.2). */}
-                      <span className="bar-fill" style={{ width: `${Math.round((count / p.reviewCount) * 100)}%` }} />
+                      <span className="block h-full bg-amber-500" style={{ width: `${Math.round((count / p.reviewCount) * 100)}%` }} />
                     </span>
-                    <span className="tabular">{count}</span>
+                    <span className="text-right tabular-nums">{count}</span>
                   </li>
                 );
               })}
             </ul>
           )}
         </div>
-        <dl className="facts">
-          <dt>เบี้ยเลี้ยง</dt>
-          <dd>{formatAllowance(p.dailyAllowanceSatang)}</dd>
-          <dt>เวลาทำงาน</dt>
-          <dd>{p.workHours || "ไม่ระบุ"}</dd>
-          <dt>สายงาน</dt>
-          <dd>{p.tags.length ? p.tags.map((tag) => tagLabel.get(tag) ?? tag).join(" · ") : "ไม่ระบุ"}</dd>
-          <dt>เพิ่มเมื่อ</dt>
-          <dd>{formatDate(p.createdAt)}</dd>
+        <dl className="grid grid-cols-3 gap-x-4 gap-y-3 text-body-md">
+          <dt className="text-on-surface-variant">เบี้ยเลี้ยง</dt>
+          <dd className="col-span-2 text-on-surface">{formatAllowance(p.dailyAllowanceSatang)}</dd>
+          <dt className="text-on-surface-variant">เวลาทำงาน</dt>
+          <dd className="col-span-2 break-words text-on-surface">{p.workHours || "ไม่ระบุ"}</dd>
+          <dt className="text-on-surface-variant">สายงาน</dt>
+          <dd className="col-span-2 text-on-surface">{p.tags.length ? p.tags.map((tag) => tagLabel.get(tag) ?? tag).join(" · ") : "ไม่ระบุ"}</dd>
+          <dt className="text-on-surface-variant">เพิ่มเมื่อ</dt>
+          <dd className="col-span-2 text-on-surface">{formatDate(p.createdAt)}</dd>
         </dl>
       </section>
 
-      <section className="card">
-        <h2>ข้อควรระวัง / สวัสดิการ</h2>
-        <p className="prose">{p.notes}</p>
-        <p className="place-links">
-          <a className="btn btn-secondary btn-sm" href={directionsUrl(p.latitude, p.longitude)} target="_blank" rel="noopener noreferrer">
+      <section className={`${card} space-y-4`}>
+        <h2 className={sectionTitle}>ข้อควรระวัง / สวัสดิการ</h2>
+        <p className="max-w-prose whitespace-pre-line break-words text-body-md text-on-surface">{p.notes}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <a className={secondaryButton} href={directionsUrl(p.latitude, p.longitude)} target="_blank" rel="noopener noreferrer">
+            <LocationIcon className="h-4 w-4" />
             นำทาง
           </a>
-          <a className="btn btn-secondary btn-sm" href={googleMapsUrl(p.latitude, p.longitude)} target="_blank" rel="noopener noreferrer">
+          <a className={secondaryButton} href={googleMapsUrl(p.latitude, p.longitude)} target="_blank" rel="noopener noreferrer">
+            <OpenInNewIcon className="h-4 w-4" />
             เปิดใน Google Maps
           </a>
           {can.managePlaces(me.data) && (
-            <Link className="btn btn-secondary btn-sm" href={`${path}/edit`}>
+            <Link className={secondaryButton} href={`${path}/edit`}>
+              <EditIcon className="h-4 w-4" />
               แก้ไขข้อมูลสถานที่
             </Link>
           )}
-        </p>
-        {can.managePlaces(me.data) && (
-          <details className="danger-zone">
-            <summary>ลบสถานที่นี้</summary>
-            <p>
-              ลบ &ldquo;{p.name}&rdquo;? สถานที่และรีวิวทั้งหมด {p.reviewCount} รายการจะถูกลบ และกู้คืนไม่ได้
-            </p>
-            <form action={deletePlace}>
-              <input type="hidden" name="id" value={p.id} />
-              <button className="btn btn-danger btn-sm" type="submit">
-                ลบสถานที่
-              </button>
-            </form>
-          </details>
-        )}
+          {can.managePlaces(me.data) && (
+            <DeleteButton
+              action={deletePlace}
+              fields={{ id: p.id }}
+              label="ลบสถานที่"
+              title={`ลบ "${p.name}"?`}
+              message={`สถานที่และรีวิวทั้งหมด ${p.reviewCount} รายการจะถูกลบ และกู้คืนไม่ได้`}
+            />
+          )}
+        </div>
       </section>
 
       {can.review(me.data) && (
-        <section className="card">
-          <h2>{mine ? "แก้ไขรีวิวของฉัน" : "เขียนรีวิว"}</h2>
-          <form action={saveReview} className="form">
+        <section className={`${card} scroll-mt-24`} id="my-review">
+          <h2 className={sectionTitle}>{mine ? "แก้ไขรีวิวของฉัน" : "เขียนรีวิว"}</h2>
+          <form action={saveReview} className="flex flex-col gap-4">
             <input type="hidden" name="placeId" value={p.id} />
             {mine && <input type="hidden" name="reviewId" value={mine.id} />}
             <ReviewFields values={mine} />
-            <div className="form-actions">
-              <button className="btn btn-primary" type="submit">
+            <div className="flex justify-end">
+              <button className={primaryButton} type="submit">
                 บันทึก
               </button>
             </div>
@@ -161,17 +163,20 @@ export default async function PlacePage({
         </section>
       )}
 
-      <section className="card">
-        <h2>รีวิวจากรุ่นพี่ ({p.reviewCount})</h2>
+      <section className={card}>
+        <h2 className={sectionTitle}>รีวิวจากรุ่นพี่ ({p.reviewCount})</h2>
         {p.reviews.length === 0 ? (
-          <p className="muted">ยังไม่มีรีวิวสำหรับสถานที่นี้</p>
+          <p className={muted}>ยังไม่มีรีวิวสำหรับสถานที่นี้</p>
         ) : (
-          <ul className="review-list">
+          <ul className="space-y-3">
             {p.reviews.map((review) => (
-              <li key={review.id} className={`review${review.isMine ? " review-mine" : ""}`}>
-                <div className="review-head">
+              <li
+                key={review.id}
+                className={`flex flex-col gap-2 rounded-xl border p-4 ${review.isMine ? "border-primary-container" : "border-outline-variant/40"}`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
                   <Stars score={review.score} />
-                  <span className="muted small">
+                  <span className={small}>
                     {review.isMine ? "รีวิวของคุณ" : "รุ่นพี่ CSMJU"}
                     {review.personCode ? ` · ${review.personCode}` : ""}
                     {review.position ? ` · ${review.position}` : ""}
@@ -179,25 +184,27 @@ export default async function PlacePage({
                     {` · ${formatDate(review.createdAt)}`}
                   </span>
                 </div>
-                {review.comment ? <p className="prose">{review.comment}</p> : <p className="muted small">ให้คะแนนอย่างเดียว</p>}
+                {review.comment ? (
+                  <p className="max-w-prose whitespace-pre-line break-words text-body-md text-on-surface">{review.comment}</p>
+                ) : (
+                  <p className={small}>ให้คะแนนอย่างเดียว</p>
+                )}
                 {(review.isMine || can.moderateReviews(me.data)) && (
-                  <details className="danger-zone">
-                    <summary>ลบรีวิวนี้</summary>
-                    <p>ลบรีวิวนี้? กู้คืนไม่ได้</p>
-                    <form action={deleteReview}>
-                      <input type="hidden" name="placeId" value={p.id} />
-                      <input type="hidden" name="reviewId" value={review.id} />
-                      <button className="btn btn-danger btn-sm" type="submit">
-                        ลบรีวิว
-                      </button>
-                    </form>
-                  </details>
+                  <div className="flex justify-end">
+                    <DeleteButton
+                      action={deleteReview}
+                      fields={{ placeId: p.id, reviewId: review.id }}
+                      label="ลบรีวิว"
+                      title="ลบรีวิวนี้?"
+                      message="รีวิวนี้จะถูกลบ และกู้คืนไม่ได้"
+                    />
+                  </div>
                 )}
               </li>
             ))}
           </ul>
         )}
       </section>
-    </Shell>
+    </>
   );
 }

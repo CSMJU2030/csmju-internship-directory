@@ -10,7 +10,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryPlacesDto } from './dto/query-places.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto, ReviewViewDto } from './dto/place-responses';
+import { MyReviewDto, PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto, ReviewViewDto } from './dto/place-responses';
 import { PLACE_TAGS, isPresetTag, normalizeTags, tagMatchKey } from './tags';
 import {
   MJU_LOCATION,
@@ -133,6 +133,20 @@ export class InternshipPlacesService {
     return [...counts.entries()]
       .map(([name, placeCount]) => ({ name, placeCount }))
       .sort((a, b) => b.placeCount - a.placeCount || a.name.localeCompare(b.name, 'th'));
+  }
+
+  /** The caller's own reviews, newest first - empty for a role that cannot review. */
+  async listMyReviews(user: CoreHubIdentity): Promise<MyReviewDto[]> {
+    const [reviews, places] = await Promise.all([
+      this.prisma.placeReview.findMany({ where: { coreUserId: user.id }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.internshipPlace.findMany({ select: { id: true, name: true, province: true } }),
+    ]);
+    const byId = new Map(places.map((place) => [place.id, place]));
+    return reviews.flatMap((review) => {
+      const place = byId.get(review.placeId);
+      if (!place) return [];
+      return [{ ...this.reviewView(user, review), placeId: place.id, placeName: place.name, placeProvince: place.province }];
+    });
   }
 
   async findOne(user: CoreHubIdentity, id: string): Promise<PlaceDetail> {

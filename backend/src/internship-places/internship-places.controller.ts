@@ -8,7 +8,7 @@ import { CollectionResult } from '../common/api-response';
 import { buildPaginationMeta } from '../common/dto/pagination.dto';
 import { ApiEnvelope } from '../openapi/api-envelope.decorator';
 import { CreatePlaceDto } from './dto/create-place.dto';
-import { DeletedDto, PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto } from './dto/place-responses';
+import { DeletedDto, MyReviewDto, PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto } from './dto/place-responses';
 import { QueryPlacesDto } from './dto/query-places.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { InternshipPlacesService } from './internship-places.service';
@@ -42,6 +42,15 @@ export class InternshipPlacesController {
   async provinces(): Promise<CollectionResult<ProvinceDto>> {
     const provinces = await this.places.listProvinces();
     return new CollectionResult(provinces, { total: provinces.length });
+  }
+
+  /** The caller's own reviews with the place each is about, newest first. Declared before :id. */
+  @Get('my-reviews')
+  @RequirePermissions(Permission.PLACE_READ)
+  @ApiEnvelope(MyReviewDto, { collection: true })
+  async myReviews(@CurrentUser() user: CoreHubIdentity): Promise<CollectionResult<MyReviewDto>> {
+    const reviews = await this.places.listMyReviews(user);
+    return new CollectionResult(reviews, { total: reviews.length });
   }
 
   @Get(':id')

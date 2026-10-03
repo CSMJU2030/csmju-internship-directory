@@ -35,13 +35,16 @@ export const RATING_TEXT: Record<number, string> = {
   5: "ดีมาก แนะนำ",
 };
 
-/** Pin colour class by average score (see .pin-* in globals.css). */
+/**
+ * Map pin colours by average score, as whole Tailwind classes so the build
+ * finds them (the same families as StatusBadge in @/csmju).
+ */
 export function pinTone(average: number): string {
-  if (average === 0) return "pin-none";
-  if (average >= 4.5) return "pin-great";
-  if (average >= 3.5) return "pin-good";
-  if (average >= 2.5) return "pin-fair";
-  return "pin-poor";
+  if (average === 0) return "bg-outline text-white";
+  if (average >= 4.5) return "bg-success text-white";
+  if (average >= 3.5) return "bg-primary-container text-white";
+  if (average >= 2.5) return "bg-amber-500 text-on-surface";
+  return "bg-error text-white";
 }
 
 /** Google Maps links built from coordinates only - no user text in the URL. */

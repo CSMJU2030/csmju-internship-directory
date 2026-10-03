@@ -448,6 +448,31 @@ describe('Internship Directory (e2e)', () => {
         await addReview(studentToken, farId, { score: 2, comment: 'งานหนักเกินไป' }).expect(201);
       });
 
+      it('lists only the caller’s own reviews with their places, newest first', async () => {
+        const mine = await request(app.getHttpServer())
+          .get('/api/v1/internship-places/my-reviews')
+          .set(bearer(studentToken))
+          .expect(200);
+        expect(mine.body.meta.total).toBe(2);
+        const reviews: Array<{ placeId: string; createdAt: string }> = mine.body.data;
+        expect(reviews.map((review) => review.placeId).sort()).toEqual([farId, paidId].sort());
+        const times = reviews.map((review) => Date.parse(review.createdAt));
+        expect(times).toEqual([...times].sort((x, y) => y - x));
+        expect(mine.body.data.find((review: { placeId: string }) => review.placeId === farId)).toMatchObject({
+          placeName: 'Bangkok Startup',
+          placeProvince: 'กรุงเทพมหานคร',
+          score: 2,
+          isMine: true,
+        });
+        expect(mine.body.data[0]).not.toHaveProperty('personCode');
+
+        const none = await request(app.getHttpServer())
+          .get('/api/v1/internship-places/my-reviews')
+          .set(bearer(staffToken))
+          .expect(200);
+        expect(none.body.data).toEqual([]);
+      });
+
       it('computes the average and the review count', async () => {
         const response = await list(studentToken).expect(200);
         const paid = response.body.data.find((place: { id: string }) => place.id === paidId);

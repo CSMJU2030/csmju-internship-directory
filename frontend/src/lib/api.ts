@@ -23,8 +23,18 @@ export type PlaceDetail = components["schemas"]["PlaceDetailDto"];
 export type Review = components["schemas"]["ReviewViewDto"];
 export type PlaceTag = components["schemas"]["PlaceTagDto"];
 export type Province = components["schemas"]["ProvinceDto"];
+export type MyReview = components["schemas"]["MyReviewDto"];
 
 export type SubsystemRole = "STUDENT" | "ALUMNI" | "STAFF" | "ADMIN" | "VIEWER";
+
+/** Role names as the app shell shows them (ui-design-system.md 10.3). */
+export const ROLE_LABEL: Record<SubsystemRole, string> = {
+  STUDENT: "นักศึกษา",
+  ALUMNI: "ศิษย์เก่า",
+  STAFF: "เจ้าหน้าที่/อาจารย์",
+  ADMIN: "ผู้ดูแลระบบ",
+  VIEWER: "ผู้เยี่ยมชม",
+};
 
 /** GET /api/v1/me - kept by hand: the copied auth controller has no response class. */
 export type Me = {
@@ -110,6 +120,11 @@ export type PlaceQuery = {
   tag?: string;
   sort?: string;
   page?: string;
+  /** Page size, 1-100 (api-conventions.md); the list asks for 20, the map for 100. */
+  limit?: string;
+  /** Sort and measure distance from here instead of the university (rounded, from NearMeButton). */
+  nearLat?: string;
+  nearLng?: string;
 };
 
 export function listPlaces(query: PlaceQuery) {
@@ -124,6 +139,9 @@ export const listTags = () => call<PlaceTag[]>("/api/v1/internship-places/tags")
 
 /** Provinces that already have places, most used first. */
 export const listProvinces = () => call<Province[]>("/api/v1/internship-places/provinces");
+
+/** The signed-in user's own reviews with their places, newest first. */
+export const listMyReviews = () => call<MyReview[]>("/api/v1/internship-places/my-reviews");
 
 export const getPlace = (id: string) => call<PlaceDetail>(`/api/v1/internship-places/${encodeURIComponent(id)}`);
 
