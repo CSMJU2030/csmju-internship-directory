@@ -1,0 +1,90 @@
+// CSMJU Internship Directory - OWN database schema.
+//
+// Naming follows the CSMJU2030 Subsystem Standard: PostgreSQL tables are plural
+// snake_case and every column is snake_case through @map, while Prisma/TypeScript
+// field names stay camelCase.
+//
+// This database belongs to the subsystem only. It never contains Core Hub
+// users, passwords, sessions or key material. A person is kept as Core Hub
+// ids only (reference-data.md 8): `coreUserId` is the token's `sub` and
+// `personCode` comes from Core Hub's GET /people/me - no names, no emails.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+// The connection string is supplied by prisma.config.ts (CLI) and by the
+// PrismaPg adapter in PrismaService (runtime) - always this subsystem's own
+// DATABASE_URL, never the Core Hub database.
+datasource db {
+  provider = "postgresql"
+}
+
+/// A company or organisation that takes CS students for internship or co-op.
+model InternshipPlace {
+  id String @id @default(uuid())
+
+  name     String
+  /// Lower-cased name without company prefixes/suffixes and punctuation -
+  /// catches the same place being added twice under a slightly different name.
+  nameKey  String @unique @map("name_key")
+  /// Thai province name without the word "จังหวัด", e.g. "เชียงใหม่".
+  province String
+
+  latitude  Float
+  longitude Float
+
+  /// Daily allowance in satang (integer money, data-dictionary.md 5). 0 = none.
+  dailyAllowanceSatang Int     @default(0) @map("daily_allowance_satang")
+  workHours            String? @map("work_hours")
+  /// Things to watch out for and benefits, written for juniors.
+  notes                String
+  /// Fields of work, from the closed list in src/internship-places/tags.ts.
+  tags                 String[] @default([])
+
+  /// Core Hub `sub` of whoever added the place.
+  createdByCoreUserId String @map("created_by_core_user_id")
+
+  reviews PlaceReview[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([province])
+  @@map("internship_places")
+}
+
+/// One person's review of one internship place.
+model PlaceReview {
+  id String @id @default(uuid())
+
+  placeId String          @map("place_id")
+  place   InternshipPlace @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  /// Who wrote it: the Core Hub `sub` claim, never a local account.
+  /// Text, not a UUID (CSV-imported students are `user-<code>`).
+  coreUserId String  @map("core_user_id")
+  /// Student or staff code from Core Hub GET /people/me when it was written -
+  /// shown to staff instead of a name. Null when the account has no person.
+  personCode String? @map("person_code")
+
+  /// 1-5 stars.
+  score          Int
+  /// Optional - a score alone is a review too.
+  comment        String?
+  /// Job title during the internship, e.g. "Frontend Developer Intern".
+  position       String?
+  /// Buddhist-era year of the internship, e.g. 2568.
+  internshipYear Int?    @map("internship_year")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// One review per person per place is enforced by the service, not a unique
+  /// key: reference-data.md 8 keeps core_user_id indexed but never unique.
+  @@index([placeId, coreUserId])
+  @@index([coreUserId])
+  @@map("place_reviews")
+}

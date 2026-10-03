@@ -1,0 +1,60 @@
+# The Internship Directory runs its own API and its own PostgreSQL instance.
+# It never connects to the Core Hub database - only to the Core Hub JWKS URL.
+services:
+  csmju-internship-directory-db:
+    image: postgres:16-alpine
+    container_name: csmju-internship-directory-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: csmju_internship_directory
+    ports:
+      # 5440 on the host so it cannot collide with another subsystem's database (or 5432)
+      - '5440:5432'
+    volumes:
+      - csmju-internship-directory-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d csmju_internship_directory']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  csmju-internship-directory-api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: csmju-internship-directory-api
+    restart: unless-stopped
+    depends_on:
+      csmju-internship-directory-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 4218
+      DATABASE_URL: postgresql://postgres:postgres@csmju-internship-directory-db:5432/csmju_internship_directory
+      CORE_HUB_URL: ${CORE_HUB_URL:-https://csmju2030.jowave.com}
+      CORE_HUB_JWKS_URL: ${CORE_HUB_JWKS_URL:-https://csmju2030.jowave.com/api/v1/.well-known/jwks.json}
+      # Core Hub's web app, as the BROWSER reaches it (/auth/login redirects there)
+      CORE_HUB_WEB_URL: ${CORE_HUB_WEB_URL:-https://csmju2030.jowave.com}
+      CORE_HUB_ISSUER: ${CORE_HUB_ISSUER:-core-hub}
+      CORE_HUB_AUDIENCE: ${CORE_HUB_AUDIENCE:-csmju2030}
+      SUBSYSTEM_ID: ${SUBSYSTEM_ID:-csmju-internship-directory}
+      SUBSYSTEM_NAME: ${SUBSYSTEM_NAME:-CSMJU Internship Directory}
+    ports:
+      - '4218:4218'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4218/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  csmju-internship-directory-db-data:
