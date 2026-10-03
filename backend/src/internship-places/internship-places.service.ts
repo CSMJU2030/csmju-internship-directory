@@ -10,7 +10,8 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryPlacesDto } from './dto/query-places.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { PlaceDetailDto, PlaceSummaryDto, ReviewViewDto } from './dto/place-responses';
+import { PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto, ReviewViewDto } from './dto/place-responses';
+import { PLACE_TAGS, isPresetTag, normalizeTags, tagMatchKey } from './tags';
 import {
   MJU_LOCATION,
   ScoreStats,
@@ -59,6 +60,7 @@ export class InternshipPlacesService {
     ]);
 
     // Ranked over the whole directory, before any filter, so a place keeps its rank.
+    const tagKey = query.tag ? tagMatchKey(query.tag) : '';
     const ranking = this.ranking(places, scores);
     const near =
       query.nearLat !== undefined && query.nearLng !== undefined
@@ -69,7 +71,7 @@ export class InternshipPlacesService {
       .filter((place) => !query.province || place.province === query.province)
       .filter((place) => query.allowance !== 'paid' || place.dailyAllowanceSatang > 0)
       .filter((place) => query.allowance !== 'free' || place.dailyAllowanceSatang === 0)
-      .filter((place) => !query.tag || place.tags.includes(query.tag))
+      .filter((place) => !tagKey || place.tags.some((tag) => tagMatchKey(tag) === tagKey))
       .map((place) => this.summarize(place, ranking, near));
 
     if (query.q) {
@@ -92,6 +94,45 @@ export class InternshipPlacesService {
 
     const total = items.length;
     return { items: items.slice(query.skip, query.skip + query.take), total };
+  }
+
+  /**
+   * Preset fields of work, then the ones users added, each with how many
+   * places list it - the add-place form offers them, the list filters by them.
+   */
+  async listTags(): Promise<PlaceTagDto[]> {
+    const places = await this.prisma.internshipPlace.findMany({ select: { tags: true } });
+    const counts = new Map<string, { label: string; count: number }>();
+    for (const { tags } of places) {
+      for (const tag of tags) {
+        const key = tagMatchKey(tag);
+        const entry = counts.get(key) ?? { label: tag, count: 0 };
+        entry.count += 1;
+        counts.set(key, entry);
+      }
+    }
+
+    const preset = PLACE_TAGS.map((tag) => ({
+      key: tag.key,
+      label: tag.label,
+      preset: true,
+      placeCount: counts.get(tag.key)?.count ?? 0,
+    }));
+    const custom = [...counts.values()]
+      .filter((entry) => !isPresetTag(entry.label))
+      .map((entry) => ({ key: entry.label, label: entry.label, preset: false, placeCount: entry.count }))
+      .sort((a, b) => b.placeCount - a.placeCount || a.label.localeCompare(b.label, 'th'));
+    return [...preset, ...custom];
+  }
+
+  /** Provinces that already have places, most used first - quick picks on the add-place form. */
+  async listProvinces(): Promise<ProvinceDto[]> {
+    const places = await this.prisma.internshipPlace.findMany({ select: { province: true } });
+    const counts = new Map<string, number>();
+    for (const { province } of places) counts.set(province, (counts.get(province) ?? 0) + 1);
+    return [...counts.entries()]
+      .map(([name, placeCount]) => ({ name, placeCount }))
+      .sort((a, b) => b.placeCount - a.placeCount || a.name.localeCompare(b.name, 'th'));
   }
 
   async findOne(user: CoreHubIdentity, id: string): Promise<PlaceDetail> {
@@ -132,7 +173,7 @@ export class InternshipPlacesService {
         dailyAllowanceSatang: dto.dailyAllowanceSatang ?? 0,
         workHours: dto.workHours?.trim() || null,
         notes: dto.notes.trim(),
-        tags: dto.tags ?? [],
+        tags: normalizeTags(dto.tags ?? []),
         createdByCoreUserId: user.id,
       },
     });
@@ -155,7 +196,7 @@ export class InternshipPlacesService {
     if (dto.dailyAllowanceSatang !== undefined) data.dailyAllowanceSatang = dto.dailyAllowanceSatang;
     if (dto.workHours !== undefined) data.workHours = dto.workHours.trim() || null;
     if (dto.notes !== undefined) data.notes = dto.notes.trim();
-    if (dto.tags !== undefined) data.tags = dto.tags;
+    if (dto.tags !== undefined) data.tags = normalizeTags(dto.tags);
 
     await this.prisma.internshipPlace.update({ where: { id }, data });
     return this.findOne(user, id);
@@ -198,7 +239,7 @@ export class InternshipPlacesService {
         coreUserId: user.id,
         personCode,
         score: dto.score,
-        comment: dto.comment.trim(),
+        comment: dto.comment?.trim() || null,
         position: dto.position?.trim() || null,
         internshipYear: dto.internshipYear ?? null,
       },
@@ -221,7 +262,7 @@ export class InternshipPlacesService {
 
     const data: Prisma.PlaceReviewUpdateInput = {};
     if (dto.score !== undefined) data.score = dto.score;
-    if (dto.comment !== undefined) data.comment = dto.comment.trim();
+    if (dto.comment !== undefined) data.comment = dto.comment.trim() || null;
     if (dto.position !== undefined) data.position = dto.position.trim() || null;
     if (dto.internshipYear !== undefined) data.internshipYear = dto.internshipYear;
 

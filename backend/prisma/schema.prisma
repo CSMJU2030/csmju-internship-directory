@@ -72,7 +72,8 @@ model PlaceReview {
 
   /// 1-5 stars.
   score          Int
-  comment        String
+  /// Optional - a score alone is a review too.
+  comment        String?
   /// Job title during the internship, e.g. "Frontend Developer Intern".
   position       String?
   /// Buddhist-era year of the internship, e.g. 2568.

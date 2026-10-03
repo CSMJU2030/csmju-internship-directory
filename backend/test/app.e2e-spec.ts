@@ -340,7 +340,7 @@ describe('Internship Directory (e2e)', () => {
     });
 
     it.each([
-      ['an unknown field of work', { tags: ['hacking'] }],
+      ['a one-character field of work', { tags: ['x'] }],
       ['too many fields of work', { tags: ['web', 'mobile', 'ai-data', 'network', 'uxui', 'game'] }],
       ['an allowance in baht with decimals', { dailyAllowanceSatang: 350.5 }],
       ['a negative allowance', { dailyAllowanceSatang: -1 }],
@@ -372,7 +372,40 @@ describe('Internship Directory (e2e)', () => {
         .get('/api/v1/internship-places/tags')
         .set(bearer(studentToken))
         .expect(200);
-      expect(response.body.data).toContainEqual({ key: 'web', label: 'Web Development' });
+      expect(response.body.data).toContainEqual({ key: 'web', label: 'Web Development', preset: true, placeCount: 0 });
+    });
+
+    it('accepts a field of work that is not in the list, and maps a preset label to its key', async () => {
+      const created = await addPlace(
+        studentToken,
+        placeBody({ tags: ['web development', 'Data  Engineering', 'data engineering', 'WEB'] }),
+      ).expect(201);
+      expect(created.body.data.tags).toEqual(['web', 'Data Engineering']);
+
+      const tags = await request(app.getHttpServer())
+        .get('/api/v1/internship-places/tags')
+        .set(bearer(studentToken))
+        .expect(200);
+      expect(tags.body.data).toContainEqual({ key: 'Data Engineering', label: 'Data Engineering', preset: false, placeCount: 1 });
+      expect(tags.body.data.find((tag: { key: string }) => tag.key === 'web')).toMatchObject({ placeCount: 1 });
+
+      const filtered = await list(studentToken, '?tag=data%20engineering').expect(200);
+      expect(filtered.body.data.map((place: { id: string }) => place.id)).toEqual([created.body.data.id]);
+    });
+
+    it('lists the provinces that already have places, most used first', async () => {
+      await addPlace(studentToken).expect(201);
+      await addPlace(studentToken, placeBody({ name: 'Second CNX', province: 'เชียงใหม่' })).expect(201);
+      await addPlace(studentToken, placeBody({ name: 'Lamphun Co', province: 'ลำพูน' })).expect(201);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/internship-places/provinces')
+        .set(bearer(studentToken))
+        .expect(200);
+      expect(response.body.data).toEqual([
+        { name: 'เชียงใหม่', placeCount: 2 },
+        { name: 'ลำพูน', placeCount: 1 },
+      ]);
     });
 
     describe('with places and reviews', () => {
@@ -498,6 +531,13 @@ describe('Internship Directory (e2e)', () => {
         expect(db.placeReview.rows.find((review) => review.coreUserId === 'user-005')).toMatchObject({
           personCode: null,
         });
+      });
+
+      it('accepts a score without any text', async () => {
+        const response = await addReview(otherStudentToken, paidId, { score: 3 }).expect(201);
+        expect(response.body.data).toMatchObject({ score: 3, comment: null, isMine: true });
+        await addReview(staffToken, paidId, { score: 4, comment: '   ' }).expect(201);
+        expect(db.placeReview.rows.find((review) => review.coreUserId === STAFF_CORE_ID)).toMatchObject({ comment: null });
       });
 
       it('allows one review per person per place (409)', async () => {

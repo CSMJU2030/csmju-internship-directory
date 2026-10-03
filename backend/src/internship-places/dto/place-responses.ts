@@ -5,10 +5,20 @@
  */
 
 export class PlaceTagDto {
-  /** Stored value, e.g. `web`. */
+  /** Stored value: a preset key (`web`) or the words of a field users added. */
   key!: string;
   /** Label shown on the page, e.g. `Web Development`. */
   label!: string;
+  /** From the preset list (true) or added by users (false). */
+  preset!: boolean;
+  /** Places listing this field of work. */
+  placeCount!: number;
+}
+
+export class ProvinceDto {
+  /** Thai province name without the word "จังหวัด". */
+  name!: string;
+  placeCount!: number;
 }
 
 export class PlaceSummaryDto {
@@ -23,7 +33,7 @@ export class PlaceSummaryDto {
   workHours!: string | null;
   /** Things to watch out for and benefits. */
   notes!: string;
-  /** Keys from GET /api/v1/internship-places/tags. */
+  /** Keys from GET /api/v1/internship-places/tags (preset keys or users' own words). */
   tags!: string[];
   /** Average review score rounded to one decimal; 0 without reviews. */
   averageScore!: number;
@@ -41,7 +51,8 @@ export class ReviewViewDto {
   id!: string;
   /** 1-5 stars. */
   score!: number;
-  comment!: string;
+  /** null when the reviewer gave a score only. */
+  comment!: string | null;
   position!: string | null;
   /** Buddhist-era year of the internship. */
   internshipYear!: number | null;

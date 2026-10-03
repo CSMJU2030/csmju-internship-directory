@@ -1,8 +1,6 @@
 import {
   ArrayMaxSize,
-  ArrayUnique,
   IsArray,
-  IsIn,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -12,7 +10,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { MAX_TAGS_PER_PLACE, PLACE_TAG_KEYS } from '../tags';
+import { CUSTOM_TAG_LENGTH, MAX_TAGS_PER_PLACE } from '../tags';
 
 /** 10,000 baht a day, in satang. */
 export const MAX_DAILY_ALLOWANCE_SATANG = 1_000_000;
@@ -57,7 +55,10 @@ export class CreatePlaceDto {
   @IsOptional()
   @IsArray({ message: 'tags ต้องเป็นรายการ' })
   @ArrayMaxSize(MAX_TAGS_PER_PLACE, { message: `tags เลือกได้ไม่เกิน ${MAX_TAGS_PER_PLACE} รายการ` })
-  @ArrayUnique({ message: 'tags ห้ามซ้ำกัน' })
-  @IsIn(PLACE_TAG_KEYS as string[], { each: true, message: 'tags มีสายงานที่ไม่รู้จัก' })
+  @IsString({ each: true, message: 'tags ต้องเป็นข้อความ' })
+  @Length(CUSTOM_TAG_LENGTH.min, CUSTOM_TAG_LENGTH.max, {
+    each: true,
+    message: `สายงานแต่ละรายการต้องยาว ${CUSTOM_TAG_LENGTH.min}-${CUSTOM_TAG_LENGTH.max} ตัวอักษร`,
+  })
   tags?: string[];
 }
