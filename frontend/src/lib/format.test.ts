@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { describeError, formatAllowance, formatDate, formatKm, googleMapsUrl, pinTone, provinceLabel, starsLabel } from "./format";
 
 describe("formatAllowance", () => {

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import TagPicker from "./TagPicker";
 
 const TAGS = [
@@ -17,6 +18,8 @@ function add(words: string) {
   fireEvent.change(screen.getByRole("textbox", { name: /เพิ่มสายงาน/ }), { target: { value: words } });
   fireEvent.click(screen.getByRole("button", { name: "เพิ่ม" }));
 }
+
+afterEach(cleanup);
 
 describe("TagPicker", () => {
   it("keeps the place's current fields ticked, even one nobody else uses", () => {

@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import NearMeButton from "./NearMeButton";
 
-const push = jest.fn();
-jest.mock("next/navigation", () => ({
+// vi.mock is hoisted above the imports, so the spy it uses must be hoisted too.
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
   usePathname: () => "/",
   useSearchParams: () => new URLSearchParams("tag=web&sort=rank"),
@@ -14,12 +16,13 @@ type Failure = (error: { code: number; PERMISSION_DENIED: number }) => void;
 function mockGeolocation(answer: (success: Success, failure: Failure) => void) {
   Object.defineProperty(navigator, "geolocation", {
     configurable: true,
-    value: { getCurrentPosition: jest.fn(answer) },
+    value: { getCurrentPosition: vi.fn(answer) },
   });
 }
 
 describe("NearMeButton", () => {
   beforeEach(() => push.mockClear());
+  afterEach(cleanup);
 
   it("lists places by distance from the rounded position, keeping the other filters", () => {
     mockGeolocation((success) => success({ coords: { latitude: 18.795123, longitude: 98.968876 } }));
