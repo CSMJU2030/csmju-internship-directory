@@ -26,6 +26,7 @@ export default function PlacesMap({ places }: { places: MapPlace[] }) {
 
   useEffect(() => {
     let map: import("leaflet").Map | undefined;
+    let resize: ResizeObserver | undefined;
     let cancelled = false;
 
     import("leaflet").then((L) => {
@@ -71,10 +72,14 @@ export default function PlacesMap({ places }: { places: MapPlace[] }) {
       } else if (markers.length === 1) {
         map.setView(markers[0].getLatLng(), 15);
       }
+      // Redraw tiles when the box changes size (window resize, scrollbar), or part stays grey.
+      resize = new ResizeObserver(() => map?.invalidateSize());
+      resize.observe(element.current);
     });
 
     return () => {
       cancelled = true;
+      resize?.disconnect();
       map?.remove();
     };
   }, [places]);

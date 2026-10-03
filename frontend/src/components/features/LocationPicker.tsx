@@ -19,6 +19,7 @@ export default function LocationPicker({ initial }: { initial?: Point }) {
 
   useEffect(() => {
     let map: import("leaflet").Map | undefined;
+    let resize: ResizeObserver | undefined;
     let cancelled = false;
 
     import("leaflet").then((L) => {
@@ -47,13 +48,18 @@ export default function LocationPicker({ initial }: { initial?: Point }) {
         }
         if (zoom) map!.setView([rounded.lat, rounded.lng], zoom);
         setPoint(rounded);
+        setMessage("");
       };
       if (initial) setPin.current(initial);
       map.on("click", (event) => setPin.current(event.latlng));
+      // Redraw tiles when the box changes size (window resize, scrollbar), or part stays grey.
+      resize = new ResizeObserver(() => map?.invalidateSize());
+      resize.observe(element.current);
     });
 
     return () => {
       cancelled = true;
+      resize?.disconnect();
       map?.remove();
     };
   }, [initial]);

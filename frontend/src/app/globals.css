@@ -178,6 +178,7 @@ h2 { font-size: 1.15rem; margin-bottom: var(--csmju-space-3); }
 
 .nav { display: flex; gap: var(--csmju-space-1); flex: 1; flex-wrap: wrap; }
 .nav-link {
+  white-space: nowrap;
   padding: var(--csmju-space-2) var(--csmju-space-3);
   border-radius: var(--csmju-radius-sm);
   color: var(--csmju-color-text-body);
