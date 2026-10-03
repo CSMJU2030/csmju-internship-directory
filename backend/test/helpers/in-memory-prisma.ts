@@ -211,6 +211,7 @@ export class InMemoryPrisma {
 
   placeReview = new Table([], [], () => ({
     personCode: null,
+    comment: null,
     position: null,
     internshipYear: null,
   }));

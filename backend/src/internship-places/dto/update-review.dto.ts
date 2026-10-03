@@ -8,9 +8,10 @@ export class UpdateReviewDto {
   @Max(5, { message: 'score ต้องเป็นจำนวนเต็ม 1-5' })
   score?: number;
 
+  /** Optional - a score alone is a review too. An empty text is stored as no text. */
   @IsOptional()
   @IsString({ message: 'comment ต้องเป็นข้อความ' })
-  @Length(5, 1000, { message: 'comment ต้องยาว 5-1,000 ตัวอักษร' })
+  @Length(0, 1000, { message: 'comment ยาวเกิน 1,000 ตัวอักษร' })
   comment?: string;
 
   @IsOptional()

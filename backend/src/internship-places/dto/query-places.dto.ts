@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsLatitude, IsLongitude, IsOptional, IsString, Length, Max, Min } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
-import { PLACE_TAG_KEYS } from '../tags';
 
 export const PLACE_SORTS = ['rank', 'rating', 'allowance', 'reviews', 'distance', 'newest', 'name'] as const;
 export type PlaceSort = (typeof PLACE_SORTS)[number];
@@ -29,8 +28,10 @@ export class QueryPlacesDto extends PaginationQueryDto {
   @Max(5, { message: 'minRating ต้องเป็นจำนวนเต็ม 1-5' })
   minRating?: number;
 
+  /** A preset key (`web`) or the words of a field of work users added. */
   @IsOptional()
-  @IsIn(PLACE_TAG_KEYS as string[], { message: 'tag ไม่ใช่สายงานที่รู้จัก' })
+  @IsString()
+  @Length(1, 40, { message: 'tag ต้องยาว 1-40 ตัวอักษร' })
   tag?: string;
 
   /** Ranking (default), average score, allowance, review count, distance, newest or name. */

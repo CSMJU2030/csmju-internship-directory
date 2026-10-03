@@ -8,11 +8,10 @@ import { CollectionResult } from '../common/api-response';
 import { buildPaginationMeta } from '../common/dto/pagination.dto';
 import { ApiEnvelope } from '../openapi/api-envelope.decorator';
 import { CreatePlaceDto } from './dto/create-place.dto';
-import { DeletedDto, PlaceDetailDto, PlaceSummaryDto, PlaceTagDto } from './dto/place-responses';
+import { DeletedDto, PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto } from './dto/place-responses';
 import { QueryPlacesDto } from './dto/query-places.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { InternshipPlacesService } from './internship-places.service';
-import { PLACE_TAGS } from './tags';
 
 @ApiTags('internship-places')
 @Controller('v1/internship-places')
@@ -27,12 +26,22 @@ export class InternshipPlacesController {
     return new CollectionResult(items, buildPaginationMeta(total, query.page ?? 1, query.take));
   }
 
-  /** The closed list of fields of work - declared before :id so it is not read as an id. */
+  /** Fields of work: the preset list, then the ones users added. Declared before :id. */
   @Get('tags')
   @RequirePermissions(Permission.PLACE_READ)
   @ApiEnvelope(PlaceTagDto, { collection: true })
-  tags(): CollectionResult<PlaceTagDto> {
-    return new CollectionResult([...PLACE_TAGS], { total: PLACE_TAGS.length });
+  async tags(): Promise<CollectionResult<PlaceTagDto>> {
+    const tags = await this.places.listTags();
+    return new CollectionResult(tags, { total: tags.length });
+  }
+
+  /** Provinces that already have places, most used first. Declared before :id. */
+  @Get('provinces')
+  @RequirePermissions(Permission.PLACE_READ)
+  @ApiEnvelope(ProvinceDto, { collection: true })
+  async provinces(): Promise<CollectionResult<ProvinceDto>> {
+    const provinces = await this.places.listProvinces();
+    return new CollectionResult(provinces, { total: provinces.length });
   }
 
   @Get(':id')
