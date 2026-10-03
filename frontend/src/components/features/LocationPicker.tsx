@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
+import { secondaryButton, small } from "../ui";
 
 type Point = { lat: number; lng: number };
 
@@ -33,8 +34,8 @@ export default function LocationPicker({ initial }: { initial?: Point }) {
 
       let marker: import("leaflet").Marker | undefined;
       const icon = L.divIcon({
-        className: "map-pin-wrap",
-        html: '<span class="map-pin pin-none"><span>+</span></span>',
+        className: "",
+        html: '<span class="flex h-8 w-8 -rotate-45 items-center justify-center rounded-full rounded-bl-none border-2 border-white bg-primary-container text-white shadow-md"><span class="rotate-45 text-label-md">+</span></span>',
         iconSize: [34, 42],
         iconAnchor: [17, 40],
       });
@@ -81,15 +82,15 @@ export default function LocationPicker({ initial }: { initial?: Point }) {
   }
 
   return (
-    <fieldset className="picker">
-      <legend>ตำแหน่งบนแผนที่ (คลิกเพื่อปักหมุด · ลากหมุดเพื่อปรับ)</legend>
-      <div ref={element} className="map map-sm" role="application" aria-label="แผนที่สำหรับปักหมุดตำแหน่ง" />
-      <div className="picker-row">
-        <span className="muted small" aria-live="polite">
+    <fieldset className="flex min-w-0 flex-col gap-3">
+      <legend className="mb-2 text-label-md text-on-surface">ตำแหน่งบนแผนที่ (คลิกเพื่อปักหมุด · ลากหมุดเพื่อปรับ)</legend>
+      <div ref={element} className="z-0 h-72 w-full rounded-xl border border-outline-variant/40" role="application" aria-label="แผนที่สำหรับปักหมุดตำแหน่ง" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className={small} aria-live="polite">
           {point ? `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}` : "ยังไม่ได้ปักหมุด"}
           {message ? ` · ${message}` : ""}
         </span>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={useMyLocation}>
+        <button type="button" className={secondaryButton} onClick={useMyLocation}>
           ใช้ตำแหน่งปัจจุบัน
         </button>
       </div>

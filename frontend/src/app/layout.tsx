@@ -1,22 +1,55 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans_Thai, Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Noto_Sans_Thai, Plus_Jakarta_Sans } from "next/font/google";
+import { CsmjuAppShell, type NavItem } from "@/csmju";
+import { can, getMe, ROLE_LABEL, type Me } from "../lib/api";
 import "./globals.css";
 
-// Self-hosted at build time by next/font - no request to Google from the browser (ui-design-system.md 4.1).
-// Same families as @csmju2030/design-system: Inter for body, Plus Jakarta Sans for headings, IBM Plex Sans Thai for Thai.
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
-const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["600", "700"] });
-const plexThai = IBM_Plex_Sans_Thai({ variable: "--font-plex-thai", subsets: ["thai"], weight: ["400", "500", "600"] });
+// Self-hosted at build time by next/font (ui-design-system.md 4.1) - same setup as the standards template.
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
+const notoSansThai = Noto_Sans_Thai({ variable: "--font-noto-thai", subsets: ["latin", "thai"], weight: ["400", "500", "600", "700"] });
+
+/** Must match display_name in subsystem.yaml. */
+const DISPLAY_NAME = "ระบบสถานที่ฝึกงาน";
 
 export const metadata: Metadata = {
-  title: "ระบบสถานที่ฝึกงาน · CSMJU",
+  title: { template: `%s · ${DISPLAY_NAME} · CSMJU`, default: `${DISPLAY_NAME} · CSMJU` },
   description: "ค้นหาสถานที่ฝึกงาน/สหกิจศึกษา และรีวิวจากรุ่นพี่ สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยแม่โจ้",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+function navFor(me: Me): NavItem[] {
+  return [
+    { label: "สถานที่ฝึกงาน", labelEn: "Places", href: "/", icon: "school" },
+    ...(can.review(me) ? [{ label: "รีวิวของฉัน", labelEn: "My reviews", href: "/my-reviews", icon: "menu-book" as const }] : []),
+  ];
+}
+
+/** Two letters for the avatar, from the e-mail Core Hub put in the token - shown, never stored (DD-01). */
+const initials = (email: string) => email.replace(/[^a-z0-9]/gi, "").slice(0, 2).toUpperCase() || "CS";
+
+/**
+ * Signed-in pages sit in CsmjuAppShell; a visitor without a session (or one
+ * that just ended) gets the page alone - the sign-in screen or ReSignIn.
+ * The user comes from this subsystem's own GET /api/v1/me.
+ */
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const me = await getMe();
+
   return (
-    <html lang="th" className={`${inter.variable} ${jakarta.variable} ${plexThai.variable}`}>
-      <body>{children}</body>
+    <html lang="th" className={`${jakarta.variable} ${notoSansThai.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col bg-background text-on-surface">
+        {me.ok ? (
+          <CsmjuAppShell
+            displayName={DISPLAY_NAME}
+            nav={navFor(me.data)}
+            primaryAction={can.addPlace(me.data) ? { label: "เพิ่มสถานที่ฝึกงาน", href: "/internship-places/new" } : undefined}
+            user={{ initials: initials(me.data.email), roleLabel: ROLE_LABEL[me.data.subsystemRole] }}
+          >
+            {children}
+          </CsmjuAppShell>
+        ) : (
+          children
+        )}
+      </body>
     </html>
   );
 }

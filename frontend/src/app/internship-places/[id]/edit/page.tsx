@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PlaceForm from "../../../../components/features/PlaceForm";
+import { alertError, muted, pageTitle } from "../../../../components/ui";
 import { can, getMe, getPlace, hasSession, isUnauthorized, listProvinces, listTags } from "../../../../lib/api";
 import { describeError } from "../../../../lib/format";
 import { updatePlace } from "../../../actions";
 import ReSignIn from "../../../_components/ReSignIn";
-import Shell, { Flash } from "../../../_components/Shell";
+import Flash from "../../../_components/Flash";
 import SignedOut from "../../../_components/SignedOut";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "แก้ไขข้อมูลสถานที่ · ระบบสถานที่ฝึกงาน · CSMJU",
+  title: "แก้ไขข้อมูลสถานที่",
 };
 
 export default async function EditPlacePage({
@@ -37,10 +38,10 @@ export default async function EditPlacePage({
   if (!place.ok || !tags.ok) throw new Error("load failed");
 
   return (
-    <Shell me={me.data}>
-      <div className="page-head">
-        <h1>แก้ไขข้อมูลสถานที่</h1>
-        <p className="muted">{place.data.name}</p>
+    <>
+      <div className="fade-slide-up">
+        <h1 className={`${pageTitle} mb-2`}>แก้ไขข้อมูลสถานที่</h1>
+        <p className={muted}>{place.data.name}</p>
       </div>
       <Flash error={error} />
       {can.managePlaces(me.data) ? (
@@ -52,10 +53,10 @@ export default async function EditPlacePage({
           cancelHref={placePath}
         />
       ) : (
-        <p className="alert" role="alert">
+        <p className={alertError} role="alert">
           คุณไม่มีสิทธิ์เข้าถึงส่วนนี้ หากคิดว่าเป็นข้อผิดพลาด กรุณาติดต่อผู้ดูแลระบบย่อยนี้
         </p>
       )}
-    </Shell>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { card, muted, pageTitle, primaryButton } from "../../components/ui";
 import { loginHref } from "../../lib/sign-in";
 
 /**
@@ -66,29 +67,29 @@ export default function ReSignIn({ next, ask = false }: { next?: string; ask?: b
   }, [ask, next]);
 
   return (
-    <main className="page page-narrow">
-      <section className="card">
+    <main className="flex min-h-dvh items-center justify-center bg-background p-4">
+      <section className={`${card} w-full max-w-md space-y-4`}>
         {asking ? (
           <>
-            <h1>เข้าสู่ระบบอีกครั้ง</h1>
-            <p>
+            <h1 className={pageTitle}>เข้าสู่ระบบอีกครั้ง</h1>
+            <p className={muted}>
               {ask
                 ? "การเข้าสู่ระบบหมดอายุก่อนส่งข้อมูล — เข้าสู่ระบบอีกครั้ง แล้วส่งใหม่"
                 : "ต่ออายุการเข้าสู่ระบบไม่สำเร็จ — ตรวจว่าเบราว์เซอร์รับคุกกี้ และเปิดระบบด้วย localhost ตรงกับที่ลงทะเบียน"}
             </p>
             <p>
-              <a className="btn btn-primary" href={href} onClick={() => markRenewal()}>
+              <a className={primaryButton} href={href} onClick={() => markRenewal()}>
                 เข้าสู่ระบบอีกครั้ง
               </a>
             </p>
           </>
         ) : (
           <>
-            <h1>กำลังต่ออายุการเข้าสู่ระบบ…</h1>
-            <p className="muted">กำลังผ่าน CSMJU Core Hub แล้วกลับมาที่หน้านี้</p>
+            <h1 className={pageTitle}>กำลังต่ออายุการเข้าสู่ระบบ…</h1>
+            <p className={muted}>กำลังผ่าน CSMJU Core Hub แล้วกลับมาที่หน้านี้</p>
             <noscript>
               <p>
-                <a className="btn btn-primary" href={href}>
+                <a className={primaryButton} href={href}>
                   เข้าสู่ระบบอีกครั้ง
                 </a>
               </p>

@@ -9,21 +9,29 @@
     "build": "next build",
     "start": "next start -p 3218",
     "typecheck": "next typegen && tsc --noEmit",
-    "generate:api-types": "openapi-typescript ../backend/openapi.json -o src/lib/api-types.ts"
+    "generate:api-types": "openapi-typescript ../backend/openapi.json -o src/lib/api-types.ts",
+    "test": "jest"
   },
   "dependencies": {
     "leaflet": "1.9.4",
-    "lucide-react": "^1.51.0",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10",
+    "@testing-library/react": "^16",
+    "@types/jest": "^30",
     "@types/leaflet": "^1.9.20",
     "@types/node": "^22.10.7",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "jest": "^30",
+    "jest-environment-jsdom": "^30",
     "openapi-typescript": "^7.8.0",
+    "tailwindcss": "^4",
+    "ts-jest": "^29.4",
     "typescript": "^5.9"
   }
 }

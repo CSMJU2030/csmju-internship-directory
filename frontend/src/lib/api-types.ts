@@ -36,6 +36,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/internship-places/my-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's own reviews with the place each is about, newest first. Declared before :id. */
+        get: operations["InternshipPlacesController_myReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/internship-places/provinces": {
         parameters: {
             query?: never;
@@ -250,6 +267,28 @@ export interface components {
             deleted: boolean;
             id: string;
         };
+        MyReviewDto: {
+            /** @description null when the reviewer gave a score only. */
+            comment: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            id: string;
+            /** @description Buddhist-era year of the internship. */
+            internshipYear: number | null;
+            /** @description Whether the caller wrote this review. */
+            isMine: boolean;
+            /** @description Reviewer's student or staff code - returned to staff (place-review:delete:any) only. */
+            personCode?: string | null;
+            placeId: string;
+            placeName: string;
+            /** @description Thai province name without the word "จังหวัด". */
+            placeProvince: string;
+            position: string | null;
+            /** @description 1-5 stars. */
+            score: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         PlaceDetailDto: {
             /** @description Average review score rounded to one decimal; 0 without reviews. */
             averageScore: number;
@@ -455,6 +494,35 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["PlaceDetailDto"];
+                        /** @enum {boolean} */
+                        success: true;
+                    };
+                };
+            };
+        };
+    };
+    InternshipPlacesController_myReviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MyReviewDto"][];
+                        meta?: {
+                            limit: number;
+                            page: number;
+                            total: number;
+                            totalPages: number;
+                        };
                         /** @enum {boolean} */
                         success: true;
                     };

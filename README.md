@@ -16,9 +16,10 @@ Internship Directory — **ระบบสถานที่ฝึกงาน/�
 ## สถานะ
 
 - ✅ **backend** (NestJS 11 + Prisma 7.9.1) — สถานที่ฝึกงาน รีวิว อันดับ ตัวกรอง ชั้น auth คัดลอกจาก `demo-student-subsystem`
-- 🟡 **frontend** (Next.js 16) — หน้าครบ (รายการ+แผนที่ · รายละเอียด+รีวิว · เพิ่ม/แก้ไขสถานที่) โครงและ SSO ตาม `demo-student-subsystem`
-  หน้าตายังเป็นชั่วคราว: `@csmju2030/design-system` v1.3.0 ใช้ auth คนละแบบกับ standards 1.7 (ดู REPORT.md) — รอ PM ยืนยันก่อนเปลี่ยนไปใช้ `<CsmjuAppShell>`
-- ⏳ **ลงทะเบียนกับ Core Hub** และ **conformance** — ต้องใช้บัญชีเจ้าของระบบของทีม (PL ทำ)
+- ✅ **frontend** (Next.js 16 + Tailwind 4) — รายการ+แผนที่+ใกล้ฉัน · รายละเอียด+รีวิว · เพิ่ม/แก้ไขสถานที่ · รีวิวของฉัน · SSO ตาม `demo-student-subsystem`
+  หน้าตาใช้ template กลาง `standards/templates/csmju-subsystem-web` (standards 1.7.2): `src/csmju/` + `globals.css` copy มาตรง ๆ ห้ามแก้ ·
+  ไม่ใช้ `@csmju2030/design-system` v1.3.0 ตามที่ PM ตอบ (ui-design-system.md ข้อ 17.0)
+- ✅ **ลงทะเบียนกับ Core Hub** แล้ว · ⏳ **conformance** — รอไฟล์บัญชีทดสอบนอก repo
 
 ## โครงสร้าง
 

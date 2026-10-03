@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
-import { MapPinned, SearchX } from "lucide-react";
 import Link from "next/link";
+import { SearchIcon } from "@/csmju";
+import NearMeButton from "../components/features/NearMeButton";
 import PlacesMap from "../components/features/PlacesMap";
 import Stars from "../components/features/Stars";
+import { MapIcon, SearchOffIcon } from "../components/icons";
+import { alertError, card, fieldLabel, input, link, muted, pageTitle, primaryButton, secondaryButton, small, tag } from "../components/ui";
 import { can, getMe, hasSession, isUnauthorized, listPlaces, listTags, type PlaceQuery } from "../lib/api";
 import { describeError, formatAllowance, formatKm, googleMapsUrl, provinceLabel } from "../lib/format";
+import Flash from "./_components/Flash";
 import ReSignIn from "./_components/ReSignIn";
-import Shell, { Flash } from "./_components/Shell";
 import SignedOut from "./_components/SignedOut";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "สถานที่ฝึกงาน · ระบบสถานที่ฝึกงาน · CSMJU",
-};
+export const metadata: Metadata = { title: "สถานที่ฝึกงาน" };
+
+/** Places per page of the list (api-conventions.md: ?page=&limit=, at most 100). */
+const PAGE_SIZE = 20;
 
 const SORTS: Array<{ value: string; label: string }> = [
   { value: "rank", label: "อันดับยอดนิยม" },
@@ -26,6 +30,17 @@ const SORTS: Array<{ value: string; label: string }> = [
 
 type Search = PlaceQuery & { ok?: string; error?: string };
 
+/** The same search with another page number, for the pager links. */
+function pageHref(query: PlaceQuery, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value && key !== "page" && key !== "limit") params.set(key, value);
+  }
+  if (page > 1) params.set("page", String(page));
+  const search = params.toString();
+  return search ? `/?${search}` : "/";
+}
+
 export default async function HomePage({ searchParams }: { searchParams: Promise<Search> }) {
   const { ok, error, ...query } = await searchParams;
 
@@ -36,42 +51,46 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     return <SignedOut reason={me.status === 401 ? null : describeError(me.code, me.message)} />;
   }
 
-  const filtered = Object.values(query).some(Boolean);
-  const [places, all, tags] = await Promise.all([
-    listPlaces(query),
-    filtered ? listPlaces({}) : Promise.resolve(null),
+  const { page: _page, limit: _limit, ...search } = query;
+  const near = Boolean(query.nearLat && query.nearLng);
+  const filtered = Object.values(search).some(Boolean);
+  const [places, mapPlaces, all, tags] = await Promise.all([
+    listPlaces({ ...query, limit: String(PAGE_SIZE) }),
+    // The map shows every match, not only this page.
+    listPlaces({ ...search, limit: "100" }),
+    filtered ? listPlaces({ limit: "100" }) : Promise.resolve(null),
     listTags(),
   ]);
-  if (isUnauthorized(places, tags, ...(all ? [all] : []))) return <ReSignIn />;
+  if (isUnauthorized(places, mapPlaces, tags, ...(all ? [all] : []))) return <ReSignIn />;
 
-  const everyPlace = all?.ok ? all.data : places.ok ? places.data : [];
+  const everyPlace = all?.ok ? all.data : mapPlaces.ok ? mapPlaces.data : [];
   const provinces = [...new Set(everyPlace.map((place) => place.province))].sort((a, b) => a.localeCompare(b, "th"));
-  const tagLabel = new Map(tags.ok ? tags.data.map((tag) => [tag.key, tag.label]) : []);
+  const tagLabel = new Map(tags.ok ? tags.data.map((item) => [item.key, item.label]) : []);
+  const meta = places.ok ? places.meta : undefined;
+  const currentPage = meta?.page ?? 1;
+  const totalPages = meta?.totalPages ?? 1;
+  const firstRank = (currentPage - 1) * PAGE_SIZE;
 
   return (
-    <Shell me={me.data} active="places">
-      <div className="page-head page-head-row">
-        <div>
-          <h1>สถานที่ฝึกงาน/สหกิจศึกษา</h1>
-          <p className="muted">อันดับ เบี้ยเลี้ยง ข้อควรระวัง และพิกัด จากรีวิวของรุ่นพี่ CSMJU</p>
-        </div>
-        {can.addPlace(me.data) && (
-          <Link className="btn btn-primary" href="/internship-places/new">
-            เพิ่มสถานที่ฝึกงาน
-          </Link>
-        )}
+    <>
+      <div className="fade-slide-up">
+        <h1 className={`${pageTitle} mb-2`}>สถานที่ฝึกงาน/สหกิจศึกษา</h1>
+        <p className={muted}>อันดับ เบี้ยเลี้ยง ข้อควรระวัง และพิกัด จากรีวิวของรุ่นพี่ CSMJU</p>
       </div>
 
       <Flash ok={ok} error={error} />
 
-      <form className="card filters" method="get" role="search" aria-label="ค้นหาและตัวกรอง">
-        <label className="filter-grow">
+      <form className={`${card} grid gap-4 sm:grid-cols-2 lg:grid-cols-4`} method="get" role="search" aria-label="ค้นหาและตัวกรอง">
+        <label className={`${fieldLabel} sm:col-span-2 lg:col-span-4`}>
           ค้นหา
-          <input type="search" name="q" defaultValue={query.q ?? ""} placeholder="ชื่อบริษัท จังหวัด หรือคำในรีวิว" maxLength={100} />
+          <span className="relative block">
+            <SearchIcon className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-outline" />
+            <input className={`${input} pl-10`} type="search" name="q" defaultValue={query.q ?? ""} placeholder="ชื่อบริษัท จังหวัด หรือคำในรีวิว" maxLength={100} />
+          </span>
         </label>
-        <label>
+        <label className={fieldLabel}>
           จังหวัด
-          <select name="province" defaultValue={query.province ?? ""}>
+          <select className={input} name="province" defaultValue={query.province ?? ""}>
             <option value="">ทุกจังหวัด</option>
             {provinces.map((province) => (
               <option key={province} value={province}>
@@ -80,50 +99,57 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             ))}
           </select>
         </label>
-        <label>
+        <label className={fieldLabel}>
           เบี้ยเลี้ยง
-          <select name="allowance" defaultValue={query.allowance ?? ""}>
+          <select className={input} name="allowance" defaultValue={query.allowance ?? ""}>
             <option value="">ทั้งหมด</option>
             <option value="paid">มีเบี้ยเลี้ยง</option>
             <option value="free">ไม่มีเบี้ยเลี้ยง</option>
           </select>
         </label>
-        <label>
+        <label className={fieldLabel}>
           คะแนน
-          <select name="minRating" defaultValue={query.minRating ?? ""}>
+          <select className={input} name="minRating" defaultValue={query.minRating ?? ""}>
             <option value="">ทุกคะแนน</option>
             <option value="4">4 ดาวขึ้นไป</option>
             <option value="3">3 ดาวขึ้นไป</option>
           </select>
         </label>
-        <label>
+        <label className={fieldLabel}>
           สายงาน
-          <select name="tag" defaultValue={query.tag ?? ""}>
+          <select className={input} name="tag" defaultValue={query.tag ?? ""}>
             <option value="">ทุกสายงาน</option>
             {tags.ok &&
-              tags.data.map((tag) => (
-                <option key={tag.key} value={tag.key}>
-                  {tag.label}
+              tags.data.map((item) => (
+                <option key={item.key} value={item.key}>
+                  {item.label}
                 </option>
               ))}
           </select>
         </label>
-        <label>
+        <label className={fieldLabel}>
           เรียงตาม
-          <select name="sort" defaultValue={query.sort ?? "rank"}>
+          <select className={input} name="sort" defaultValue={query.sort ?? "rank"}>
             {SORTS.map((sort) => (
               <option key={sort.value} value={sort.value}>
-                {sort.label}
+                {near && sort.value === "distance" ? "ใกล้ฉัน" : sort.label}
               </option>
             ))}
           </select>
         </label>
-        <div className="filter-actions">
-          <button className="btn btn-primary" type="submit">
+        {near && (
+          <>
+            <input type="hidden" name="nearLat" value={query.nearLat} />
+            <input type="hidden" name="nearLng" value={query.nearLng} />
+          </>
+        )}
+        <div className="flex flex-wrap items-end gap-3 sm:col-span-2 lg:col-span-3">
+          <button className={primaryButton} type="submit">
             ค้นหา
           </button>
+          <NearMeButton />
           {filtered && (
-            <Link className="btn btn-secondary" href="/">
+            <Link className={secondaryButton} href="/">
               ล้างตัวกรอง
             </Link>
           )}
@@ -131,87 +157,106 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </form>
 
       {!places.ok ? (
-        <p className="alert" role="alert">
+        <p className={alertError} role="alert">
           {describeError(places.code, places.message)}
         </p>
-      ) : places.data.length === 0 && filtered ? (
-        <section className="card empty">
-          <SearchX className="empty-icon" size={40} aria-hidden="true" />
-          <h2>ไม่พบสถานที่ฝึกงานตรงตามเงื่อนไข</h2>
-          <p className="muted">ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง</p>
-          <Link className="btn btn-secondary" href="/">
-            ล้างตัวกรอง
-          </Link>
-        </section>
       ) : places.data.length === 0 ? (
-        <section className="card empty">
-          <MapPinned className="empty-icon" size={40} aria-hidden="true" />
-          <h2>ยังไม่มีสถานที่ฝึกงาน</h2>
-          <p className="muted">เพิ่มที่ที่เคยฝึกงานพร้อมรีวิว เพื่อช่วยรุ่นน้องเลือกที่ฝึกงาน</p>
-          {can.addPlace(me.data) && (
-            <Link className="btn btn-primary" href="/internship-places/new">
-              เพิ่มสถานที่ฝึกงาน
-            </Link>
+        <section className={`${card} flex flex-col items-center gap-3 py-12 text-center`}>
+          {filtered ? (
+            <>
+              <SearchOffIcon className="h-12 w-12 text-outline" />
+              <h2 className="font-display text-headline-md text-on-surface">ไม่พบสถานที่ฝึกงานตรงตามเงื่อนไข</h2>
+              <p className={muted}>ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง</p>
+              <Link className={secondaryButton} href="/">
+                ล้างตัวกรอง
+              </Link>
+            </>
+          ) : (
+            <>
+              <MapIcon className="h-12 w-12 text-outline" />
+              <h2 className="font-display text-headline-md text-on-surface">ยังไม่มีสถานที่ฝึกงาน</h2>
+              <p className={muted}>เพิ่มที่ที่เคยฝึกงานพร้อมรีวิว เพื่อช่วยรุ่นน้องเลือกที่ฝึกงาน</p>
+              {can.addPlace(me.data) && (
+                <Link className={primaryButton} href="/internship-places/new">
+                  เพิ่มสถานที่ฝึกงาน
+                </Link>
+              )}
+            </>
           )}
         </section>
       ) : (
         <>
-          <p className="muted small" aria-live="polite">
-            พบ <span className="tabular">{places.data.length.toLocaleString("th-TH")}</span> แห่ง
+          <p className={small} aria-live="polite">
+            พบ <span className="tabular-nums">{(meta?.total ?? places.data.length).toLocaleString("th-TH")}</span> แห่ง
+            {totalPages > 1 && ` · หน้า ${currentPage} จาก ${totalPages}`}
           </p>
-          <PlacesMap
-            places={places.data.map(({ id, name, latitude, longitude, averageScore, reviewCount }) => ({
-              id,
-              name,
-              latitude,
-              longitude,
-              averageScore,
-              reviewCount,
-            }))}
-          />
-          <ol className="place-list">
+          {mapPlaces.ok && (
+            <PlacesMap
+              places={mapPlaces.data.map(({ id, name, latitude, longitude, averageScore, reviewCount }) => ({
+                id,
+                name,
+                latitude,
+                longitude,
+                averageScore,
+                reviewCount,
+              }))}
+              origin={near ? { lat: Number(query.nearLat), lng: Number(query.nearLng) } : undefined}
+            />
+          )}
+          <ol className="space-y-4">
             {places.data.map((place, index) => (
-              <li key={place.id} className="card place-card">
-                <div className="place-card-head">
-                  <span className="rank-badge tabular" aria-label={`ลำดับที่ ${index + 1}`}>
-                    {index + 1}
+              <li key={place.id} className={`${card} flex flex-col gap-3`}>
+                <div className="flex flex-wrap items-start gap-3">
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-container/10 text-label-md tabular-nums text-primary-container"
+                    aria-label={`ลำดับที่ ${firstRank + index + 1}`}
+                  >
+                    {firstRank + index + 1}
                   </span>
-                  <div className="place-card-title">
-                    <h2>
-                      <Link href={`/internship-places/${encodeURIComponent(place.id)}`}>{place.name}</Link>
+                  <div className="min-w-0 flex-1 basis-48">
+                    <h2 className="break-words font-display text-headline-md text-on-surface">
+                      <Link className="hover:text-primary-container hover:underline" href={`/internship-places/${encodeURIComponent(place.id)}`}>
+                        {place.name}
+                      </Link>
                     </h2>
-                    <p className="muted small">
-                      {provinceLabel(place.province)} · ห่าง ม.แม่โจ้ {formatKm(place.distanceKm)}
+                    <p className={small}>
+                      {provinceLabel(place.province)} · {near ? "ห่างจากคุณ" : "ห่าง ม.แม่โจ้"} {formatKm(place.distanceKm)}
                     </p>
                   </div>
-                  <span className={`badge ${place.dailyAllowanceSatang > 0 ? "badge-ok" : "badge-muted"}`}>
+                  <span
+                    className={`whitespace-nowrap rounded-full px-2.5 py-1 text-label-sm ${
+                      place.dailyAllowanceSatang > 0 ? "bg-success/10 text-emerald-700" : "bg-surface-variant text-on-surface-variant"
+                    }`}
+                  >
                     {formatAllowance(place.dailyAllowanceSatang)}
                   </span>
                 </div>
                 {place.tags.length > 0 && (
-                  <ul className="tag-list" aria-label="สายงาน">
-                    {place.tags.map((tag) => (
-                      <li key={tag} className="tag">
-                        {tagLabel.get(tag) ?? tag}
+                  <ul className="flex flex-wrap gap-2" aria-label="สายงาน">
+                    {place.tags.map((key) => (
+                      <li key={key} className={tag}>
+                        {tagLabel.get(key) ?? key}
                       </li>
                     ))}
                   </ul>
                 )}
-                <p className="place-notes">{place.notes}</p>
-                <div className="place-card-foot">
+                <p className="line-clamp-2 break-words text-body-md text-on-surface-variant">{place.notes}</p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   {place.reviewCount > 0 ? (
-                    <span>
-                      <Stars score={place.averageScore} />{" "}
-                      <span className="muted small tabular">
+                    <span className="inline-flex items-center gap-2">
+                      <Stars score={place.averageScore} />
+                      <span className={`${small} tabular-nums`}>
                         {place.averageScore.toLocaleString("th-TH", { maximumFractionDigits: 1 })} · {place.reviewCount} รีวิว
                       </span>
                     </span>
                   ) : (
-                    <span className="muted small">ยังไม่มีรีวิว</span>
+                    <span className={small}>ยังไม่มีรีวิว</span>
                   )}
-                  <span className="place-links">
-                    <Link href={`/internship-places/${encodeURIComponent(place.id)}`}>ดูรายละเอียด</Link>
-                    <a href={googleMapsUrl(place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">
+                  <span className="flex flex-wrap gap-4">
+                    <Link className={link} href={`/internship-places/${encodeURIComponent(place.id)}`}>
+                      ดูรายละเอียด
+                    </Link>
+                    <a className={link} href={googleMapsUrl(place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">
                       Google Maps
                     </a>
                   </span>
@@ -219,8 +264,25 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               </li>
             ))}
           </ol>
+          {totalPages > 1 && (
+            <nav className="flex flex-wrap items-center justify-center gap-3" aria-label="เปลี่ยนหน้า">
+              {currentPage > 1 && (
+                <Link className={secondaryButton} href={pageHref(query, currentPage - 1)}>
+                  หน้าก่อนหน้า
+                </Link>
+              )}
+              <span className={small}>
+                หน้า {currentPage} จาก {totalPages}
+              </span>
+              {currentPage < totalPages && (
+                <Link className={secondaryButton} href={pageHref(query, currentPage + 1)}>
+                  หน้าถัดไป
+                </Link>
+              )}
+            </nav>
+          )}
         </>
       )}
-    </Shell>
+    </>
   );
 }

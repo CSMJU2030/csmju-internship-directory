@@ -64,6 +64,14 @@ export class ReviewViewDto {
   updatedAt!: Date;
 }
 
+/** One of the caller's own reviews, with the place it is about. */
+export class MyReviewDto extends ReviewViewDto {
+  placeId!: string;
+  placeName!: string;
+  /** Thai province name without the word "จังหวัด". */
+  placeProvince!: string;
+}
+
 export class ScoreDistributionDto {
   '1'!: number;
   '2'!: number;

@@ -82,9 +82,9 @@ grep -iE "eyJ|access_token=|authorization:|cookie:" log   0 บรรทัด
 ## สิ่งที่ยังทำไม่ได้ / เคสที่ยังไม่ผ่าน
 
 - **conformance ยังไม่ได้รัน** — ต้องให้ PL ลงทะเบียนระบบใน Core Hub (ตาราง role mapping ด้านบน) และได้บัญชีทดสอบจากผู้ดูแล dev server
-- **frontend ยังไม่ได้ใช้ `@csmju2030/design-system` / `<CsmjuAppShell>`** — v1.3.0 ของ package ทำ auth ตาม standards 1.3
-  (`/oauth/token` · `/auth/refresh` · token ใน memory · `per_page`) ซึ่ง Core Hub จริงและ standards 1.7 ไม่มี
-  AppShell ยิง `POST /auth/refresh` ทุกครั้งที่หน้าโหลด ใช้แล้ว SSO จะพัง — frontend จึงใช้โครงของ `demo-student-subsystem`
-  (Shell ชั่วคราว + CSS token ใน `globals.css`) ไปก่อน รอ PM ยืนยันแนวทาง
+- **หน้าตาใช้ template ใน standards 1.7.2 แทน `@csmju2030/design-system`** — PM ตอบ (3 ต.ค. 2569) ว่า package v1.3.0 ขัดกับมาตรฐาน ห้ามใช้ ·
+  copy `src/csmju/` · `src/app/globals.css` · `public/csmju-logo.png` จาก `standards/templates/csmju-subsystem-web` (ห้ามแก้ ถ้าไม่พอขอผ่านข้อ 17.4) ·
+  `CsmjuAppShell` ครอบหน้าที่ login แล้วใน `layout.tsx` (ผู้ใช้จาก `GET /api/v1/me`) · ฟอนต์ Plus Jakarta Sans + Noto Sans Thai ผ่าน `next/font` ·
+  ไอคอนใช้ชุดกลาง + `src/components/icons.tsx` สไตล์เดียวกัน (ไม่ผสม lucide · ข้อ 14) · รายการแบ่งหน้า `?page=&limit=20`
 - **map picker ทดสอบในเบราว์เซอร์ที่ซ่อนอยู่ไม่ได้** — หน้าเพิ่มสถานที่ส่งฟอร์มได้จริง (server action ทำงานแม้ JS ยังไม่ hydrate)
   แต่การคลิกปักหมุดบนแผนที่ต้องทดสอบด้วยตาบนเบราว์เซอร์จริงและมือถือ 360px

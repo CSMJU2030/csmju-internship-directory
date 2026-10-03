@@ -100,6 +100,72 @@
         ],
         "type": "object"
       },
+      "MyReviewDto": {
+        "properties": {
+          "comment": {
+            "description": "null when the reviewer gave a score only.",
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "internshipYear": {
+            "description": "Buddhist-era year of the internship.",
+            "nullable": true,
+            "type": "number"
+          },
+          "isMine": {
+            "description": "Whether the caller wrote this review.",
+            "type": "boolean"
+          },
+          "personCode": {
+            "description": "Reviewer's student or staff code - returned to staff (place-review:delete:any) only.",
+            "nullable": true,
+            "type": "string"
+          },
+          "placeId": {
+            "type": "string"
+          },
+          "placeName": {
+            "type": "string"
+          },
+          "placeProvince": {
+            "description": "Thai province name without the word \"จังหวัด\".",
+            "type": "string"
+          },
+          "position": {
+            "nullable": true,
+            "type": "string"
+          },
+          "score": {
+            "description": "1-5 stars.",
+            "type": "number"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "placeId",
+          "placeName",
+          "placeProvince",
+          "id",
+          "score",
+          "comment",
+          "position",
+          "internshipYear",
+          "isMine",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "PlaceDetailDto": {
         "properties": {
           "averageScore": {
@@ -723,6 +789,69 @@
             "description": ""
           }
         },
+        "tags": [
+          "internship-places"
+        ]
+      }
+    },
+    "/api/v1/internship-places/my-reviews": {
+      "get": {
+        "operationId": "InternshipPlacesController_myReviews",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/MyReviewDto"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ],
+                      "type": "object"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "The caller's own reviews with the place each is about, newest first. Declared before :id.",
         "tags": [
           "internship-places"
         ]

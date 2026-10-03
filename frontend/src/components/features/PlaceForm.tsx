@@ -4,6 +4,7 @@ import LocationPicker from "./LocationPicker";
 import ProvincePicker from "./ProvincePicker";
 import { ReviewFields } from "./ReviewForm";
 import TagPicker from "./TagPicker";
+import { card, fieldLabel, input, primaryButton, secondaryButton } from "../ui";
 
 /**
  * Add or correct a place. With `withReview` the first review is part of the
@@ -25,17 +26,18 @@ export default function PlaceForm({
   cancelHref: string;
 }) {
   return (
-    <form action={action} className="card form">
+    <form action={action} className={`${card} flex flex-col gap-6`}>
       {place && <input type="hidden" name="id" value={place.id} />}
-      <label>
+      <label className={fieldLabel}>
         ชื่อบริษัท/หน่วยงาน (จำเป็น)
-        <input name="name" required minLength={2} maxLength={120} defaultValue={place?.name ?? ""} placeholder="บริษัท ตัวอย่าง จำกัด" />
+        <input className={input} name="name" required minLength={2} maxLength={120} defaultValue={place?.name ?? ""} placeholder="บริษัท ตัวอย่าง จำกัด" />
       </label>
       <ProvincePicker provinces={provinces} initial={place?.province ?? ""} />
-      <div className="form-row">
-        <label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className={fieldLabel}>
           เบี้ยเลี้ยง (บาท/วัน · 0 = ไม่มี)
           <input
+            className={input}
             name="allowanceBaht"
             type="number"
             min={0}
@@ -46,30 +48,30 @@ export default function PlaceForm({
           />
         </label>
       </div>
-      <label>
+      <label className={fieldLabel}>
         เวลาทำงาน
-        <input name="workHours" maxLength={80} defaultValue={place?.workHours ?? ""} placeholder="08:30 - 17:30 น. (จันทร์ - ศุกร์)" />
+        <input className={input} name="workHours" maxLength={80} defaultValue={place?.workHours ?? ""} placeholder="08:30 - 17:30 น. (จันทร์ - ศุกร์)" />
       </label>
-      <label>
+      <label className={fieldLabel}>
         ข้อควรระวัง / สวัสดิการ (จำเป็น)
-        <textarea name="notes" rows={3} required minLength={5} maxLength={600} defaultValue={place?.notes ?? ""} />
+        <textarea className={input} name="notes" rows={3} required minLength={5} maxLength={600} defaultValue={place?.notes ?? ""} />
       </label>
       <TagPicker tags={tags} initial={place?.tags ?? []} />
 
       <LocationPicker initial={place ? { lat: place.latitude, lng: place.longitude } : undefined} />
 
       {withReview && (
-        <fieldset className="subsection">
-          <legend>รีวิวของคุณ (ไม่บังคับ — ข้ามได้ ถ้าเคยฝึกที่นี่ให้คะแนนไว้ก็พอ)</legend>
+        <fieldset className="flex min-w-0 flex-col gap-4 rounded-xl border border-outline-variant/40 p-4">
+          <legend className="px-1 text-label-md text-on-surface">รีวิวของคุณ (ไม่บังคับ — ข้ามได้ ถ้าเคยฝึกที่นี่ให้คะแนนไว้ก็พอ)</legend>
           <ReviewFields required={false} />
         </fieldset>
       )}
 
-      <div className="form-actions">
-        <Link className="btn btn-secondary" href={cancelHref}>
+      <div className="flex flex-wrap justify-end gap-3">
+        <Link className={secondaryButton} href={cancelHref}>
           ยกเลิก
         </Link>
-        <button className="btn btn-primary" type="submit">
+        <button className={primaryButton} type="submit">
           บันทึก
         </button>
       </div>

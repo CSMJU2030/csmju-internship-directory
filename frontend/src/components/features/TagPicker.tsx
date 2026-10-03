@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { PlaceTag } from "../../lib/api";
+import { fieldLabel, input, small, tonalButton } from "../ui";
 
 const MAX_TAGS = 5;
 const fold = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
@@ -52,14 +53,15 @@ export default function TagPicker({ tags, initial = [] }: { tags: PlaceTag[]; in
   }
 
   return (
-    <fieldset className="picker">
-      <legend>สายงานที่รับฝึก (เลือกได้สูงสุด {MAX_TAGS})</legend>
-      <div className="tag-picker">
+    <fieldset className="flex min-w-0 flex-col gap-3">
+      <legend className="mb-2 text-label-md text-on-surface">สายงานที่รับฝึก (เลือกได้สูงสุด {MAX_TAGS})</legend>
+      <div className="flex flex-wrap gap-x-6">
         {options.map((tag) => {
           const checked = selected.includes(tag.key);
           return (
-            <label key={tag.key} className="choice">
+            <label key={tag.key} className="flex min-h-11 cursor-pointer items-center gap-2 text-body-md text-on-surface">
               <input
+                className="h-5 w-5 accent-primary-container"
                 type="checkbox"
                 name="tags"
                 value={tag.key}
@@ -72,10 +74,11 @@ export default function TagPicker({ tags, initial = [] }: { tags: PlaceTag[]; in
           );
         })}
       </div>
-      <div className="add-tag">
-        <label className="add-tag-input">
+      <div className="flex flex-wrap items-end gap-3">
+        <label className={`${fieldLabel} min-w-0 flex-1 basis-60`}>
           ไม่มีในรายการ? เพิ่มสายงาน
           <input
+            className={input}
             name="newTags"
             maxLength={120}
             value={draft}
@@ -89,11 +92,11 @@ export default function TagPicker({ tags, initial = [] }: { tags: PlaceTag[]; in
             placeholder="เช่น Data Engineering"
           />
         </label>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={addDraft}>
+        <button type="button" className={tonalButton} onClick={addDraft}>
           เพิ่ม
         </button>
       </div>
-      <p className="muted small" aria-live="polite">
+      <p className={small} aria-live="polite">
         {message}
       </p>
     </fieldset>
