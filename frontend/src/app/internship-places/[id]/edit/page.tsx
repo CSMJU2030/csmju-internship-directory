@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PlaceForm from "../../../../components/features/PlaceForm";
-import { can, getMe, getPlace, hasSession, isUnauthorized, listTags } from "../../../../lib/api";
+import { can, getMe, getPlace, hasSession, isUnauthorized, listProvinces, listTags } from "../../../../lib/api";
 import { describeError } from "../../../../lib/format";
 import { updatePlace } from "../../../actions";
 import ReSignIn from "../../../_components/ReSignIn";
@@ -31,8 +31,8 @@ export default async function EditPlacePage({
     return <SignedOut next={`${placePath}/edit`} reason={me.status === 401 ? null : describeError(me.code, me.message)} />;
   }
 
-  const [place, tags] = await Promise.all([getPlace(id), listTags()]);
-  if (isUnauthorized(place, tags)) return <ReSignIn />;
+  const [place, tags, provinces] = await Promise.all([getPlace(id), listTags(), listProvinces()]);
+  if (isUnauthorized(place, tags, provinces)) return <ReSignIn />;
   if (!place.ok && (place.status === 404 || place.status === 400)) notFound();
   if (!place.ok || !tags.ok) throw new Error("load failed");
 
@@ -44,7 +44,13 @@ export default async function EditPlacePage({
       </div>
       <Flash error={error} />
       {can.managePlaces(me.data) ? (
-        <PlaceForm action={updatePlace} tags={tags.data} place={place.data} cancelHref={placePath} />
+        <PlaceForm
+          action={updatePlace}
+          tags={tags.data}
+          provinces={provinces.ok ? provinces.data : []}
+          place={place.data}
+          cancelHref={placePath}
+        />
       ) : (
         <p className="alert" role="alert">
           คุณไม่มีสิทธิ์เข้าถึงส่วนนี้ หากคิดว่าเป็นข้อผิดพลาด กรุณาติดต่อผู้ดูแลระบบย่อยนี้

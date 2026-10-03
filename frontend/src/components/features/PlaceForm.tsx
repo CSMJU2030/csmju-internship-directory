@@ -1,7 +1,9 @@
 import Link from "next/link";
-import type { PlaceDetail, PlaceTag } from "../../lib/api";
+import type { PlaceDetail, PlaceTag, Province } from "../../lib/api";
 import LocationPicker from "./LocationPicker";
+import ProvincePicker from "./ProvincePicker";
 import { ReviewFields } from "./ReviewForm";
+import TagPicker from "./TagPicker";
 
 /**
  * Add or correct a place. With `withReview` the first review is part of the
@@ -10,12 +12,14 @@ import { ReviewFields } from "./ReviewForm";
 export default function PlaceForm({
   action,
   tags,
+  provinces,
   place,
   withReview = false,
   cancelHref,
 }: {
   action: (formData: FormData) => Promise<void>;
   tags: PlaceTag[];
+  provinces: Province[];
   place?: PlaceDetail;
   withReview?: boolean;
   cancelHref: string;
@@ -27,11 +31,8 @@ export default function PlaceForm({
         ชื่อบริษัท/หน่วยงาน (จำเป็น)
         <input name="name" required minLength={2} maxLength={120} defaultValue={place?.name ?? ""} placeholder="บริษัท ตัวอย่าง จำกัด" />
       </label>
+      <ProvincePicker provinces={provinces} initial={place?.province ?? ""} />
       <div className="form-row">
-        <label>
-          จังหวัด (จำเป็น)
-          <input name="province" required minLength={2} maxLength={50} defaultValue={place?.province ?? ""} placeholder="เชียงใหม่" />
-        </label>
         <label>
           เบี้ยเลี้ยง (บาท/วัน · 0 = ไม่มี)
           <input
@@ -53,21 +54,13 @@ export default function PlaceForm({
         ข้อควรระวัง / สวัสดิการ (จำเป็น)
         <textarea name="notes" rows={3} required minLength={5} maxLength={600} defaultValue={place?.notes ?? ""} />
       </label>
-      <fieldset className="tag-picker">
-        <legend>สายงานที่รับฝึก (เลือกได้สูงสุด 5)</legend>
-        {tags.map((tag) => (
-          <label key={tag.key} className="choice">
-            <input type="checkbox" name="tags" value={tag.key} defaultChecked={place?.tags.includes(tag.key)} />
-            <span>{tag.label}</span>
-          </label>
-        ))}
-      </fieldset>
+      <TagPicker tags={tags} initial={place?.tags ?? []} />
 
       <LocationPicker initial={place ? { lat: place.latitude, lng: place.longitude } : undefined} />
 
       {withReview && (
         <fieldset className="subsection">
-          <legend>รีวิวของคุณ (ไม่บังคับ — ถ้าเคยฝึกที่นี่)</legend>
+          <legend>รีวิวของคุณ (ไม่บังคับ — ข้ามได้ ถ้าเคยฝึกที่นี่ให้คะแนนไว้ก็พอ)</legend>
           <ReviewFields required={false} />
         </fieldset>
       )}

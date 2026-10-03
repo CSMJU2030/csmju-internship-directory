@@ -53,6 +53,18 @@ function allowanceSatang(formData: FormData): number {
   return Number.isFinite(baht) ? Math.round(baht * 100) : Number.NaN;
 }
 
+/**
+ * Ticked fields of work plus the ones typed into "เพิ่มสายงาน" - the box takes
+ * several separated by commas, so it works before (or without) JavaScript too.
+ */
+function placeTags(formData: FormData): string[] {
+  const typed = text(formData, "newTags")
+    .split(/[,;]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  return [...formData.getAll("tags").map(String), ...typed];
+}
+
 function placeBody(formData: FormData) {
   return {
     name: text(formData, "name"),
@@ -62,7 +74,7 @@ function placeBody(formData: FormData) {
     dailyAllowanceSatang: allowanceSatang(formData),
     workHours: text(formData, "workHours"),
     notes: text(formData, "notes"),
-    tags: formData.getAll("tags").map(String),
+    tags: placeTags(formData),
   };
 }
 
@@ -84,12 +96,17 @@ export async function createPlace(formData: FormData) {
 
   const placePath = `/internship-places/${encodeURIComponent(created.data.id)}`;
   const score = optionalInt(formData, "score");
+  const wroteSomething = Boolean(text(formData, "comment") || text(formData, "position") || text(formData, "internshipYear"));
+  if (score === undefined && wroteSomething) {
+    // The place is saved; only the review is missing its score.
+    redirect(withParams(placePath, { error: "เพิ่มสถานที่แล้ว แต่รีวิวยังไม่ได้บันทึก เพราะยังไม่ได้ให้คะแนนดาว" }));
+  }
   if (score !== undefined) {
     const review = await call(`/api/v1/internship-places/${encodeURIComponent(created.data.id)}/reviews`, {
       method: "POST",
       body: {
         score,
-        comment: text(formData, "comment"),
+        comment: optionalText(formData, "comment"),
         position: optionalText(formData, "position"),
         internshipYear: optionalInt(formData, "internshipYear"),
       },
@@ -118,7 +135,8 @@ export async function saveReview(formData: FormData) {
   const placePath = samePath(formData.get("returnTo"), `/internship-places/${encodeURIComponent(placeId)}`);
   const body = {
     score: optionalInt(formData, "score"),
-    comment: text(formData, "comment"),
+    // Empty on edit clears the text; empty on a new review sends none.
+    comment: reviewId ? text(formData, "comment") : optionalText(formData, "comment"),
     position: text(formData, "position"),
     internshipYear: optionalInt(formData, "internshipYear"),
   };

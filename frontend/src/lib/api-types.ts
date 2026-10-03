@@ -36,6 +36,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/internship-places/provinces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Provinces that already have places, most used first. Declared before :id. */
+        get: operations["InternshipPlacesController_provinces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/internship-places/tags": {
         parameters: {
             query?: never;
@@ -43,7 +60,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The closed list of fields of work - declared before :id so it is not read as an id. */
+        /** Fields of work: the preset list, then the ones users added. Declared before :id. */
         get: operations["InternshipPlacesController_tags"];
         put?: never;
         post?: never;
@@ -217,11 +234,12 @@ export interface components {
             notes: string;
             /** @description Thai province name, e.g. "เชียงใหม่" (the word "จังหวัด" is dropped). */
             province: string;
-            tags?: ("web" | "mobile" | "ai-data" | "network" | "uxui" | "testing" | "security" | "game" | "iot" | "erp")[];
+            tags?: string[];
             workHours?: string;
         };
         CreateReviewDto: {
-            comment: string;
+            /** @description Optional - a score alone is a review too. An empty text is stored as no text. */
+            comment?: string;
             /** @description Buddhist-era year; the service rejects a year after next year. */
             internshipYear?: number;
             /** @description Job title during the internship, e.g. "Frontend Developer Intern". */
@@ -258,7 +276,7 @@ export interface components {
             reviews: components["schemas"]["ReviewViewDto"][];
             /** @description Number of reviews per score. */
             scoreDistribution: components["schemas"]["ScoreDistributionDto"];
-            /** @description Keys from GET /api/v1/internship-places/tags. */
+            /** @description Keys from GET /api/v1/internship-places/tags (preset keys or users' own words). */
             tags: string[];
             /** Format: date-time */
             updatedAt: string;
@@ -284,20 +302,30 @@ export interface components {
             /** @description Position in the ranking of the whole directory (1 = best). */
             rank: number;
             reviewCount: number;
-            /** @description Keys from GET /api/v1/internship-places/tags. */
+            /** @description Keys from GET /api/v1/internship-places/tags (preset keys or users' own words). */
             tags: string[];
             /** Format: date-time */
             updatedAt: string;
             workHours: string | null;
         };
         PlaceTagDto: {
-            /** @description Stored value, e.g. `web`. */
+            /** @description Stored value: a preset key (`web`) or the words of a field users added. */
             key: string;
             /** @description Label shown on the page, e.g. `Web Development`. */
             label: string;
+            /** @description Places listing this field of work. */
+            placeCount: number;
+            /** @description From the preset list (true) or added by users (false). */
+            preset: boolean;
+        };
+        ProvinceDto: {
+            /** @description Thai province name without the word "จังหวัด". */
+            name: string;
+            placeCount: number;
         };
         ReviewViewDto: {
-            comment: string;
+            /** @description null when the reviewer gave a score only. */
+            comment: string | null;
             /** Format: date-time */
             createdAt: string;
             id: string;
@@ -327,10 +355,11 @@ export interface components {
             name?: string;
             notes?: string;
             province?: string;
-            tags?: ("web" | "mobile" | "ai-data" | "network" | "uxui" | "testing" | "security" | "game" | "iot" | "erp")[];
+            tags?: string[];
             workHours?: string;
         };
         UpdateReviewDto: {
+            /** @description Optional - a score alone is a review too. An empty text is stored as no text. */
             comment?: string;
             internshipYear?: number;
             position?: string;
@@ -370,7 +399,8 @@ export interface operations {
                 province?: string;
                 allowance?: "paid" | "free";
                 minRating?: number;
-                tag?: "web" | "mobile" | "ai-data" | "network" | "uxui" | "testing" | "security" | "game" | "iot" | "erp";
+                /** @description A preset key (`web`) or the words of a field of work users added. */
+                tag?: string;
                 /** @description Ranking (default), average score, allowance, review count, distance, newest or name. */
                 sort?: "rank" | "rating" | "allowance" | "reviews" | "distance" | "newest" | "name";
                 /** @description Measure `distanceKm` from here instead of the university (both or neither). */
@@ -425,6 +455,35 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["PlaceDetailDto"];
+                        /** @enum {boolean} */
+                        success: true;
+                    };
+                };
+            };
+        };
+    };
+    InternshipPlacesController_provinces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProvinceDto"][];
+                        meta?: {
+                            limit: number;
+                            page: number;
+                            total: number;
+                            totalPages: number;
+                        };
                         /** @enum {boolean} */
                         success: true;
                     };

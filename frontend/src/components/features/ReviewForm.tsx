@@ -6,7 +6,7 @@ export function internshipYears(now = new Date()): number[] {
   return Array.from({ length: 12 }, (_, index) => current - index);
 }
 
-type ReviewValues = { score?: number; comment?: string; position?: string | null; internshipYear?: number | null };
+type ReviewValues = { score?: number; comment?: string | null; position?: string | null; internshipYear?: number | null };
 
 /**
  * Review fields shared by the review form and the "add place" form. Plain
@@ -47,13 +47,11 @@ export function ReviewFields({ values = {}, required = true }: { values?: Review
         </label>
       </div>
       <label>
-        เล่าประสบการณ์{required ? " (จำเป็น)" : ""}
+        เล่าประสบการณ์ (ไม่บังคับ — ให้คะแนนอย่างเดียวก็ได้)
         <textarea
           name="comment"
           rows={4}
-          minLength={5}
           maxLength={1000}
-          required={required}
           defaultValue={values.comment ?? ""}
           placeholder="งานที่ได้ทำ พี่เลี้ยง บรรยากาศ สิ่งที่ได้เรียนรู้"
         />

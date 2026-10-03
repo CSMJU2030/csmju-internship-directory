@@ -359,3 +359,26 @@ legend { font-weight: 500; color: var(--csmju-color-text); margin-bottom: var(--
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
 }
+
+/* --- quick picks (provinces, fields of work) ------------------------------ */
+
+.quick-picks { display: flex; flex-wrap: wrap; gap: var(--csmju-space-2); }
+.chip {
+  font: inherit;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--csmju-space-1);
+  padding: var(--csmju-space-1) var(--csmju-space-3);
+  border-radius: var(--csmju-radius-full);
+  border: 1px solid var(--csmju-color-border);
+  background: var(--csmju-color-surface);
+  color: var(--csmju-color-text-body);
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--csmju-color-primary); }
+.chip:focus-visible { outline: 3px solid var(--csmju-color-focus-ring); outline-offset: 1px; }
+.chip-on { background: var(--csmju-color-primary-soft); border-color: var(--csmju-color-primary); color: var(--csmju-color-primary); }
+.chip-count { font-size: 0.75rem; color: var(--csmju-color-text-muted); }
+.add-tag { display: flex; gap: var(--csmju-space-2); align-items: flex-end; flex-wrap: wrap; }
+.add-tag-input { flex: 1 1 240px; }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PlaceForm from "../../../components/features/PlaceForm";
-import { can, getMe, hasSession, isUnauthorized, listTags } from "../../../lib/api";
+import { can, getMe, hasSession, isUnauthorized, listProvinces, listTags } from "../../../lib/api";
 import { describeError } from "../../../lib/format";
 import { createPlace } from "../../actions";
 import ReSignIn from "../../_components/ReSignIn";
@@ -22,8 +22,8 @@ export default async function NewPlacePage({ searchParams }: { searchParams: Pro
     return <SignedOut next="/internship-places/new" reason={me.status === 401 ? null : describeError(me.code, me.message)} />;
   }
 
-  const tags = await listTags();
-  if (isUnauthorized(tags)) return <ReSignIn />;
+  const [tags, provinces] = await Promise.all([listTags(), listProvinces()]);
+  if (isUnauthorized(tags, provinces)) return <ReSignIn />;
   if (!tags.ok) throw new Error(tags.code);
 
   return (
@@ -34,7 +34,7 @@ export default async function NewPlacePage({ searchParams }: { searchParams: Pro
       </div>
       <Flash error={error} />
       {can.addPlace(me.data) ? (
-        <PlaceForm action={createPlace} tags={tags.data} withReview cancelHref="/" />
+        <PlaceForm action={createPlace} tags={tags.data} provinces={provinces.ok ? provinces.data : []} withReview cancelHref="/" />
       ) : (
         <p className="alert" role="alert">
           คุณไม่มีสิทธิ์เข้าถึงส่วนนี้ หากคิดว่าเป็นข้อผิดพลาด กรุณาติดต่อผู้ดูแลระบบย่อยนี้

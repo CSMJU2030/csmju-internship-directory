@@ -177,7 +177,7 @@ export default async function PlacePage({
                     {` · ${formatDate(review.createdAt)}`}
                   </span>
                 </div>
-                <p className="prose">{review.comment}</p>
+                {review.comment ? <p className="prose">{review.comment}</p> : <p className="muted small">ให้คะแนนอย่างเดียว</p>}
                 {(review.isMine || can.moderateReviews(me.data)) && (
                   <details className="danger-zone">
                     <summary>ลบรีวิวนี้</summary>

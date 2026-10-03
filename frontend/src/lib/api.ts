@@ -22,6 +22,7 @@ export type PlaceSummary = components["schemas"]["PlaceSummaryDto"];
 export type PlaceDetail = components["schemas"]["PlaceDetailDto"];
 export type Review = components["schemas"]["ReviewViewDto"];
 export type PlaceTag = components["schemas"]["PlaceTagDto"];
+export type Province = components["schemas"]["ProvinceDto"];
 
 export type SubsystemRole = "STUDENT" | "ALUMNI" | "STAFF" | "ADMIN" | "VIEWER";
 
@@ -120,6 +121,9 @@ export function listPlaces(query: PlaceQuery) {
 }
 
 export const listTags = () => call<PlaceTag[]>("/api/v1/internship-places/tags");
+
+/** Provinces that already have places, most used first. */
+export const listProvinces = () => call<Province[]>("/api/v1/internship-places/provinces");
 
 export const getPlace = (id: string) => call<PlaceDetail>(`/api/v1/internship-places/${encodeURIComponent(id)}`);
 
