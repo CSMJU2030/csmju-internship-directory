@@ -123,6 +123,11 @@ h2 { font-size: var(--csmju-text-h3); line-height: var(--csmju-text-h3-lh); marg
   position: sticky;
   top: 0;
   z-index: var(--csmju-z-header);
+  transition: transform var(--csmju-duration-base) var(--csmju-ease-standard);
+}
+/* Phones: the header takes several rows, so it slides away while scrolling down (AutoHideHeader). */
+@media (max-width: 760px) {
+  .topbar-hidden { transform: translateY(-100%); }
 }
 .topbar-inner {
   max-width: var(--csmju-container-max);
