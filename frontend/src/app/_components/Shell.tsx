@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AutoHideHeader from "../../components/shared/AutoHideHeader";
 import Toast from "../../components/shared/Toast";
 import { can, type Me } from "../../lib/api";
 
@@ -28,7 +29,7 @@ export default function Shell({ me, active, children }: { me: Me; active?: NavKe
       <a href="#main" className="skip-link">
         ข้ามไปยังเนื้อหาหลัก
       </a>
-      <header className="topbar">
+      <AutoHideHeader>
         <div className="topbar-inner">
           <Link href="/" className="brand">
             <span className="brand-mark" aria-hidden>
@@ -66,7 +67,7 @@ export default function Shell({ me, active, children }: { me: Me; active?: NavKe
             </form>
           </div>
         </div>
-      </header>
+      </AutoHideHeader>
       <main id="main" className="page">
         {children}
       </main>
