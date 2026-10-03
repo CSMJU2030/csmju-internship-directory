@@ -12,3 +12,4 @@ generated/
 *.key
 !.env.example
 *.tsbuildinfo
+*.local.mjs
