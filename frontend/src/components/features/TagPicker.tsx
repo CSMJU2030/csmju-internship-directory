@@ -32,24 +32,39 @@ export default function TagPicker({ tags, initial = [] }: { tags: PlaceTag[]; in
     setSelected((current) => (current.includes(key) ? current.filter((tag) => tag !== key) : full ? current : [...current, key]));
   }
 
+  /** Adds what was typed - several fields separated by commas, as the server reads the box. */
   function addDraft() {
-    const words = draft.trim().replace(/\s+/g, " ");
-    if (words.length < 2 || words.length > 40) {
+    const parts = draft
+      .split(/[,;]/)
+      .map((words) => words.trim().replace(/\s+/g, " "))
+      .filter(Boolean);
+    if (parts.length === 0 || parts.some((words) => words.length < 2 || words.length > 40)) {
       setMessage("ชื่อสายงานต้องยาว 2-40 ตัวอักษร");
       return;
     }
-    const existing = options.find((tag) => fold(tag.key) === fold(words) || fold(tag.label) === fold(words));
-    const key = existing ? existing.key : words;
-    if (!existing) setOptions((current) => [...current, { key, label: words }]);
-    if (!selected.includes(key)) {
-      if (full) {
+
+    let nextOptions = options;
+    let nextSelected = selected;
+    let foundExisting = false;
+    for (const words of parts) {
+      const existing = nextOptions.find((tag) => fold(tag.key) === fold(words) || fold(tag.label) === fold(words));
+      const key = existing ? existing.key : words;
+      if (nextSelected.includes(key)) {
+        foundExisting = true;
+        continue;
+      }
+      if (nextSelected.length >= MAX_TAGS) {
         setMessage(`เลือกได้สูงสุด ${MAX_TAGS} สายงาน`);
         return;
       }
-      setSelected((current) => [...current, key]);
+      if (existing) foundExisting = true;
+      else nextOptions = [...nextOptions, { key, label: words }];
+      nextSelected = [...nextSelected, key];
     }
+    setOptions(nextOptions);
+    setSelected(nextSelected);
     setDraft("");
-    setMessage(existing ? "มีสายงานนี้อยู่แล้ว เลือกให้แล้ว" : "");
+    setMessage(foundExisting ? "มีสายงานนี้อยู่แล้ว เลือกให้แล้ว" : "");
   }
 
   return (

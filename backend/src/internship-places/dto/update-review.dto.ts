@@ -19,8 +19,9 @@ export class UpdateReviewDto {
   @Length(0, 60, { message: 'position ยาวเกิน 60 ตัวอักษร' })
   position?: string;
 
+  /** Buddhist-era year; null clears it ("ไม่ระบุ"). */
   @IsOptional()
   @IsInt({ message: 'internshipYear ต้องเป็นปี พ.ศ.' })
   @Min(2540, { message: 'internshipYear ต้องเป็นปี พ.ศ. ตั้งแต่ 2540' })
-  internshipYear?: number;
+  internshipYear?: number | null;
 }
