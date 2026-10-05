@@ -11,6 +11,9 @@ const notoSansThai = Noto_Sans_Thai({ variable: "--font-noto-thai", subsets: ["l
 /** Must match display_name in subsystem.yaml. */
 const DISPLAY_NAME = "ระบบสถานที่ฝึกงาน";
 
+/** Core Hub web origin for the "กลับ CSMJU Portal" link (ui-design-system.md 5.1) - from .env, never hardcoded. */
+const CORE_HUB_WEB_URL = process.env.CORE_HUB_WEB_URL;
+
 export const metadata: Metadata = {
   title: { template: `%s · ${DISPLAY_NAME} · CSMJU`, default: `${DISPLAY_NAME} · CSMJU` },
   description: "ค้นหาสถานที่ฝึกงาน/สหกิจศึกษา และรีวิวจากรุ่นพี่ สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยแม่โจ้",
@@ -43,6 +46,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             nav={navFor(me.data)}
             primaryAction={can.addPlace(me.data) ? { label: "เพิ่มสถานที่ฝึกงาน", href: "/internship-places/new" } : undefined}
             user={{ initials: initials(me.data.email), roleLabel: ROLE_LABEL[me.data.subsystemRole] }}
+            coreHubUrl={CORE_HUB_WEB_URL}
           >
             {children}
           </CsmjuAppShell>

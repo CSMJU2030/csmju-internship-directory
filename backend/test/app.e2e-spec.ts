@@ -346,6 +346,8 @@ describe('Internship Directory (e2e)', () => {
       ['a negative allowance', { dailyAllowanceSatang: -1 }],
       ['a latitude out of range', { latitude: 120 }],
       ['a smuggled owner', { createdByCoreUserId: 'someone-else' }],
+      ['notes that are long enough only with spaces', { notes: '      x' }],
+      ['a name that is only company words', { name: 'บริษัท จำกัด' }],
     ])('rejects %s (400)', async (_label, overrides) => {
       await addPlace(studentToken, placeBody(overrides)).expect(400);
     });
@@ -571,6 +573,17 @@ describe('Internship Directory (e2e)', () => {
         expect(again.body.error.details.reviewId).toEqual(expect.any(String));
       });
 
+      it('keeps one review when the same person submits twice at once (201 + 409)', async () => {
+        const body = { score: 4, comment: 'กดส่งซ้ำ' };
+        const results = await Promise.all([addReview(alumniToken, freeId, body), addReview(alumniToken, freeId, body)]);
+        expect(results.map((result) => result.status).sort()).toEqual([201, 409]);
+        const place = await request(app.getHttpServer())
+          .get(`/api/v1/internship-places/${freeId}`)
+          .set(bearer(alumniToken))
+          .expect(200);
+        expect(place.body.data.reviewCount).toBe(1);
+      });
+
       it('rejects a review score outside 1-5 or a year after next year (400)', async () => {
         await addReview(otherStudentToken, paidId, { score: 6, comment: 'ดีเกินไป' }).expect(400);
         await addReview(otherStudentToken, paidId, { score: 4, comment: 'มาจากอนาคต', internshipYear: 2600 }).expect(400);
@@ -589,6 +602,15 @@ describe('Internship Directory (e2e)', () => {
           .expect(200);
 
         expect(edited.body.data).toMatchObject({ score: 3, comment: 'แก้ไขแล้ว งานหนักขึ้น', isMine: true });
+
+        // "ไม่ระบุ" sends null, which clears the year (an omitted field keeps it).
+        expect(edited.body.data.internshipYear).toBe(2568);
+        const cleared = await request(app.getHttpServer())
+          .patch(path)
+          .set(bearer(studentToken))
+          .send({ internshipYear: null })
+          .expect(200);
+        expect(cleared.body.data.internshipYear).toBeNull();
       });
 
       it('lets the author or staff delete a review (200 + deleted:true) and recomputes the average', async () => {

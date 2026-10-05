@@ -41,6 +41,12 @@ describe("TagPicker", () => {
     expect(screen.queryByText("มีสายงานนี้อยู่แล้ว เลือกให้แล้ว")).not.toBeNull();
   });
 
+  it("adds several fields separated by commas, as the server reads the box", () => {
+    render(<TagPicker tags={TAGS} />);
+    add("DevOps, Cloud; web development");
+    expect(checked()).toEqual(["web", "DevOps", "Cloud"]);
+  });
+
   it("rejects a name that is too short", () => {
     render(<TagPicker tags={TAGS} />);
     add("x");

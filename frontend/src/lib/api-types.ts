@@ -400,7 +400,8 @@ export interface components {
         UpdateReviewDto: {
             /** @description Optional - a score alone is a review too. An empty text is stored as no text. */
             comment?: string;
-            internshipYear?: number;
+            /** @description Buddhist-era year; null clears it ("ไม่ระบุ"). */
+            internshipYear?: number | null;
             position?: string;
             score?: number;
         };

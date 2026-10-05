@@ -221,9 +221,23 @@ export class InMemoryPrisma {
   async onModuleInit(): Promise<void> {}
   async onModuleDestroy(): Promise<void> {}
 
-  /** Array form only: the operations already ran when they were built, as here. */
-  async $transaction<T>(operations: Promise<T>[]): Promise<T[]> {
-    return Promise.all(operations);
+  /** Callback transactions run one at a time - the effect of the advisory lock in Postgres. */
+  private queue: Promise<unknown> = Promise.resolve();
+
+  /**
+   * Array form: the operations already ran when they were built, as here.
+   * Callback form: `fn` gets this client and waits for the previous one.
+   */
+  async $transaction<T>(operations: Promise<T>[] | ((tx: InMemoryPrisma) => Promise<T>)): Promise<T[] | T> {
+    if (Array.isArray(operations)) return Promise.all(operations);
+    const run = this.queue.then(() => operations(this));
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
+  /** Raw SQL is only the advisory lock, which the queue above stands in for. */
+  async $executeRaw(): Promise<number> {
+    return 0;
   }
 
   reset(): void {

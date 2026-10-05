@@ -173,8 +173,9 @@ export class InternshipPlacesService {
   }
 
   async create(user: CoreHubIdentity, dto: CreatePlaceDto): Promise<PlaceDetail> {
-    const name = dto.name.trim();
-    const nameKey = placeNameKey(name);
+    const name = this.requireText(dto.name, 2, 'ชื่อสถานที่');
+    const notes = this.requireText(dto.notes, 5, 'ข้อควรระวัง/สวัสดิการ');
+    const nameKey = this.nameKeyOf(name);
     await this.assertNameFree(nameKey);
 
     const place = await this.prisma.internshipPlace.create({
@@ -186,7 +187,7 @@ export class InternshipPlacesService {
         longitude: dto.longitude,
         dailyAllowanceSatang: dto.dailyAllowanceSatang ?? 0,
         workHours: dto.workHours?.trim() || null,
-        notes: dto.notes.trim(),
+        notes,
         tags: normalizeTags(dto.tags ?? []),
         createdByCoreUserId: user.id,
       },
@@ -199,9 +200,10 @@ export class InternshipPlacesService {
 
     const data: Prisma.InternshipPlaceUpdateInput = {};
     if (dto.name !== undefined) {
-      const nameKey = placeNameKey(dto.name);
+      const name = this.requireText(dto.name, 2, 'ชื่อสถานที่');
+      const nameKey = this.nameKeyOf(name);
       await this.assertNameFree(nameKey, id);
-      data.name = dto.name.trim();
+      data.name = name;
       data.nameKey = nameKey;
     }
     if (dto.province !== undefined) data.province = this.cleanProvince(dto.province);
@@ -209,7 +211,7 @@ export class InternshipPlacesService {
     if (dto.longitude !== undefined) data.longitude = dto.longitude;
     if (dto.dailyAllowanceSatang !== undefined) data.dailyAllowanceSatang = dto.dailyAllowanceSatang;
     if (dto.workHours !== undefined) data.workHours = dto.workHours.trim() || null;
-    if (dto.notes !== undefined) data.notes = dto.notes.trim();
+    if (dto.notes !== undefined) data.notes = this.requireText(dto.notes, 5, 'ข้อควรระวัง/สวัสดิการ');
     if (dto.tags !== undefined) data.tags = normalizeTags(dto.tags);
 
     await this.prisma.internshipPlace.update({ where: { id }, data });
@@ -235,28 +237,35 @@ export class InternshipPlacesService {
     await this.load(placeId);
     this.assertYear(dto.internshipYear);
 
-    const existing = await this.prisma.placeReview.findFirst({
-      where: { placeId, coreUserId: user.id },
-    });
-    if (existing) {
-      throw AppException.conflict('คุณรีวิวสถานที่นี้แล้ว แก้ไขรีวิวเดิมแทนได้', {
-        reviewId: existing.id,
-      });
-    }
-
-    // Personal data is never cached: asked now, with the reviewer's own token.
+    // Personal data is never cached: asked now, with the reviewer's own token -
+    // before the transaction, so no lock is held during the call to Core Hub.
     const personCode = await this.people.myPersonCode(token);
 
-    const review = await this.prisma.placeReview.create({
-      data: {
-        placeId,
-        coreUserId: user.id,
-        personCode,
-        score: dto.score,
-        comment: dto.comment?.trim() || null,
-        position: dto.position?.trim() || null,
-        internshipYear: dto.internshipYear ?? null,
-      },
+    // One review per person per place without a unique key (core_user_id stays
+    // non-unique, reference-data.md 8): a transaction-scoped advisory lock on
+    // place + person makes a double submit wait, then find the first review.
+    const lockKey = `${placeId}:${user.id}`;
+    const review = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+      const existing = await tx.placeReview.findFirst({
+        where: { placeId, coreUserId: user.id },
+      });
+      if (existing) {
+        throw AppException.conflict('คุณรีวิวสถานที่นี้แล้ว แก้ไขรีวิวเดิมแทนได้', {
+          reviewId: existing.id,
+        });
+      }
+      return tx.placeReview.create({
+        data: {
+          placeId,
+          coreUserId: user.id,
+          personCode,
+          score: dto.score,
+          comment: dto.comment?.trim() || null,
+          position: dto.position?.trim() || null,
+          internshipYear: dto.internshipYear ?? null,
+        },
+      });
     });
     return this.reviewView(user, review);
   }
@@ -301,6 +310,24 @@ export class InternshipPlacesService {
 
   // ------------------------------------------------------------------ helpers
 
+  /** The DTO checks length before trimming; this checks what is actually stored. */
+  private requireText(value: string, min: number, label: string): string {
+    const text = value.trim();
+    if (text.length < min) {
+      throw AppException.badRequest(`${label}ต้องยาวอย่างน้อย ${min} ตัวอักษร (ไม่นับช่องว่าง)`);
+    }
+    return text;
+  }
+
+  /** A name that is only "บริษัท ... จำกัด" words has no key to tell it from others. */
+  private nameKeyOf(name: string): string {
+    const nameKey = placeNameKey(name);
+    if (!nameKey) {
+      throw AppException.badRequest('ชื่อสถานที่ต้องมีชื่อบริษัท/หน่วยงาน ไม่ใช่แค่คำว่า บริษัท หรือ จำกัด');
+    }
+    return nameKey;
+  }
+
   private async load(id: string): Promise<InternshipPlace> {
     const place = await this.prisma.internshipPlace.findUnique({ where: { id } });
     if (!place) {
@@ -325,8 +352,8 @@ export class InternshipPlacesService {
     }
   }
 
-  private assertYear(year: number | undefined): void {
-    if (year !== undefined && year > currentBuddhistYear() + 1) {
+  private assertYear(year: number | null | undefined): void {
+    if (year != null && year > currentBuddhistYear() + 1) {
       throw AppException.badRequest('internshipYear ต้องไม่เกินปีหน้า');
     }
   }

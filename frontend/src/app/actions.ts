@@ -10,11 +10,6 @@ import { describeError } from "../lib/format";
  * back to the page as ?ok= / ?error= so the forms work without client JS.
  */
 
-function samePath(value: FormDataEntryValue | null, fallback: string): string {
-  const path = typeof value === "string" ? value : "";
-  return path.startsWith("/") && !path.startsWith("//") && !path.includes("\\") ? path : fallback;
-}
-
 function withParams(path: string, params: Record<string, string>): string {
   const [base, query = ""] = path.split("?");
   const merged = new URLSearchParams(query);
@@ -53,6 +48,9 @@ function allowanceSatang(formData: FormData): number {
   return Number.isFinite(baht) ? Math.round(baht * 100) : Number.NaN;
 }
 
+/** The backend takes at most this many fields of work per place. */
+const MAX_TAGS = 5;
+
 /**
  * Ticked fields of work plus the ones typed into "เพิ่มสายงาน" - the box takes
  * several separated by commas, so it works before (or without) JavaScript too.
@@ -62,7 +60,21 @@ function placeTags(formData: FormData): string[] {
     .split(/[,;]/)
     .map((tag) => tag.trim())
     .filter(Boolean);
-  return [...formData.getAll("tags").map(String), ...typed];
+  // The same words ticked and typed again count once.
+  const seen = new Set<string>();
+  return [...formData.getAll("tags").map(String), ...typed].filter((tag) => {
+    const key = tag.toLowerCase().replace(/\s+/g, " ");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/** Too many fields of work: say so plainly instead of the backend's validation text. */
+function checkTags(formData: FormData, formPath: string): void {
+  if (placeTags(formData).length > MAX_TAGS) {
+    redirect(withParams(formPath, { error: `เลือกสายงานได้สูงสุด ${MAX_TAGS} สายงาน (รวมที่พิมพ์เพิ่ม)` }));
+  }
 }
 
 function placeBody(formData: FormData) {
@@ -83,6 +95,7 @@ export async function createPlace(formData: FormData) {
   if (!text(formData, "latitude") || !text(formData, "longitude")) {
     redirect(withParams(formPath, { error: "กรุณาปักหมุดตำแหน่งบนแผนที่" }));
   }
+  checkTags(formData, formPath);
 
   const created = await call<PlaceDetail>("/api/v1/internship-places", { method: "POST", body: placeBody(formData) });
   if (!created.ok) {
@@ -119,6 +132,7 @@ export async function createPlace(formData: FormData) {
 export async function updatePlace(formData: FormData) {
   const id = text(formData, "id");
   const placePath = `/internship-places/${encodeURIComponent(id)}`;
+  checkTags(formData, `${placePath}/edit`);
   const result = await call(`/api/v1/internship-places/${encodeURIComponent(id)}`, { method: "PATCH", body: placeBody(formData) });
   back(result.ok ? placePath : `${placePath}/edit`, result, "บันทึกการแก้ไขแล้ว");
 }
@@ -132,13 +146,14 @@ export async function deletePlace(formData: FormData) {
 export async function saveReview(formData: FormData) {
   const placeId = text(formData, "placeId");
   const reviewId = text(formData, "reviewId");
-  const placePath = samePath(formData.get("returnTo"), `/internship-places/${encodeURIComponent(placeId)}`);
+  const placePath = `/internship-places/${encodeURIComponent(placeId)}`;
   const body = {
     score: optionalInt(formData, "score"),
     // Empty on edit clears the text; empty on a new review sends none.
     comment: reviewId ? text(formData, "comment") : optionalText(formData, "comment"),
     position: text(formData, "position"),
-    internshipYear: optionalInt(formData, "internshipYear"),
+    // "ไม่ระบุ" on edit sends null so the year is cleared; an omitted field would keep it.
+    internshipYear: reviewId ? (optionalInt(formData, "internshipYear") ?? null) : optionalInt(formData, "internshipYear"),
   };
 
   const base = `/api/v1/internship-places/${encodeURIComponent(placeId)}/reviews`;

@@ -525,7 +525,9 @@
             "type": "string"
           },
           "internshipYear": {
+            "description": "Buddhist-era year; null clears it (\"ไม่ระบุ\").",
             "minimum": 2540,
+            "nullable": true,
             "type": "number"
           },
           "position": {

@@ -6,7 +6,7 @@ import PlacesMap from "../components/features/PlacesMap";
 import Stars from "../components/features/Stars";
 import { MapIcon, SearchOffIcon } from "../components/icons";
 import { alertError, card, fieldLabel, input, link, muted, pageTitle, primaryButton, secondaryButton, small, tag } from "../components/ui";
-import { can, getMe, hasSession, isUnauthorized, listPlaces, listTags, type PlaceQuery } from "../lib/api";
+import { can, getMe, hasSession, isUnauthorized, listPlaces, listProvinces, listTags, type PlaceQuery } from "../lib/api";
 import { describeError, formatAllowance, formatKm, googleMapsUrl, provinceLabel } from "../lib/format";
 import Flash from "./_components/Flash";
 import ReSignIn from "./_components/ReSignIn";
@@ -18,6 +18,9 @@ export const metadata: Metadata = { title: "สถานที่ฝึกงา
 
 /** Places per page of the list (api-conventions.md: ?page=&limit=, at most 100). */
 const PAGE_SIZE = 20;
+
+/** The map asks for one page of the largest size the API allows. */
+const MAP_LIMIT = 100;
 
 const SORTS: Array<{ value: string; label: string }> = [
   { value: "rank", label: "อันดับยอดนิยม" },
@@ -54,22 +57,21 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const { page: _page, limit: _limit, ...search } = query;
   const near = Boolean(query.nearLat && query.nearLng);
   const filtered = Object.values(search).some(Boolean);
-  const [places, mapPlaces, all, tags] = await Promise.all([
+  const [places, mapPlaces, provinceList, tags] = await Promise.all([
     listPlaces({ ...query, limit: String(PAGE_SIZE) }),
-    // The map shows every match, not only this page.
-    listPlaces({ ...search, limit: "100" }),
-    filtered ? listPlaces({ limit: "100" }) : Promise.resolve(null),
+    // The map shows the matches of every page, not only this one (up to MAP_LIMIT).
+    listPlaces({ ...search, limit: String(MAP_LIMIT) }),
+    listProvinces(),
     listTags(),
   ]);
-  if (isUnauthorized(places, mapPlaces, tags, ...(all ? [all] : []))) return <ReSignIn />;
+  if (isUnauthorized(places, mapPlaces, provinceList, tags)) return <ReSignIn />;
 
-  const everyPlace = all?.ok ? all.data : mapPlaces.ok ? mapPlaces.data : [];
-  const provinces = [...new Set(everyPlace.map((place) => place.province))].sort((a, b) => a.localeCompare(b, "th"));
+  const provinces = provinceList.ok ? provinceList.data.map((province) => province.name).sort((a, b) => a.localeCompare(b, "th")) : [];
+  const mapTotal = mapPlaces.ok ? (mapPlaces.meta?.total ?? mapPlaces.data.length) : 0;
   const tagLabel = new Map(tags.ok ? tags.data.map((item) => [item.key, item.label]) : []);
   const meta = places.ok ? places.meta : undefined;
   const currentPage = meta?.page ?? 1;
   const totalPages = meta?.totalPages ?? 1;
-  const firstRank = (currentPage - 1) * PAGE_SIZE;
 
   return (
     <>
@@ -160,6 +162,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <p className={alertError} role="alert">
           {describeError(places.code, places.message)}
         </p>
+      ) : places.data.length === 0 && (meta?.total ?? 0) > 0 ? (
+        <section className={`${card} flex flex-col items-center gap-3 py-12 text-center`}>
+          <h2 className="font-display text-headline-md text-on-surface">ไม่มีหน้านี้</h2>
+          <p className={muted}>รายการมีทั้งหมด {totalPages} หน้า</p>
+          <Link className={secondaryButton} href={pageHref(query, 1)}>
+            กลับไปหน้าแรก
+          </Link>
+        </section>
       ) : places.data.length === 0 ? (
         <section className={`${card} flex flex-col items-center gap-3 py-12 text-center`}>
           {filtered ? (
@@ -190,6 +200,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             พบ <span className="tabular-nums">{(meta?.total ?? places.data.length).toLocaleString("th-TH")}</span> แห่ง
             {totalPages > 1 && ` · หน้า ${currentPage} จาก ${totalPages}`}
           </p>
+          {mapTotal > MAP_LIMIT && (
+            <p className={small}>
+              แผนที่แสดง {MAP_LIMIT} แห่งแรกจาก {mapTotal.toLocaleString("th-TH")} แห่ง — ใช้ตัวกรองเพื่อดูส่วนที่เหลือ
+            </p>
+          )}
           {mapPlaces.ok && (
             <PlacesMap
               places={mapPlaces.data.map(({ id, name, latitude, longitude, averageScore, reviewCount }) => ({
@@ -204,14 +219,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             />
           )}
           <ol className="space-y-4">
-            {places.data.map((place, index) => (
+            {places.data.map((place) => (
               <li key={place.id} className={`${card} flex flex-col gap-3`}>
                 <div className="flex flex-wrap items-start gap-3">
                   <span
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-container/10 text-label-md tabular-nums text-primary-container"
-                    aria-label={`ลำดับที่ ${firstRank + index + 1}`}
+                    aria-label={`อันดับที่ ${place.rank} ของทั้งหมด`}
+                    title="อันดับจากคะแนนรีวิวของทั้งระบบ"
                   >
-                    {firstRank + index + 1}
+                    {place.rank}
                   </span>
                   <div className="min-w-0 flex-1 basis-48">
                     <h2 className="break-words font-display text-headline-md text-on-surface">
