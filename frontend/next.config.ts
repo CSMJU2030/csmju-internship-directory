@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 /**
@@ -6,10 +7,19 @@ import type { NextConfig } from "next";
  * registered in Core Hub (http://localhost:3218/auth/callback), the state
  * cookie of /auth/login and the HttpOnly session cookie all live on the same
  * origin as these pages.
+ *
+ * next build bakes these rewrites into the build, so BACKEND_URL is read at
+ * build time only: from .env.local in development, and from frontend/Dockerfile
+ * (http://api:4000) in the image (standards docs/deployment.md 3.2).
  */
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://127.0.0.1:4218";
 
 const nextConfig: NextConfig = {
+  // The image ships only the traced standalone server (deployment.md 3 · DEP-04).
+  output: "standalone",
+  // pnpm keeps dependencies at the workspace root (the repo root), so tracing
+  // has to start there or the standalone bundle misses them.
+  outputFileTracingRoot: path.join(__dirname, ".."),
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` },

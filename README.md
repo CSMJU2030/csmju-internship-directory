@@ -43,15 +43,29 @@ git submodule update --init standards          # ห้ามใส่ --remote 
 cp backend/.env.example backend/.env           # ค่าของ Core Hub จริงอยู่ในไฟล์แล้ว
 pnpm install
 
-docker compose up -d csmju-internship-directory-db   # PostgreSQL พอร์ต 5440
+docker compose up -d db                        # PostgreSQL พอร์ต 5440
 pnpm --filter backend prisma:deploy
-pnpm --filter backend prisma:seed              # สถานที่ตัวอย่าง 3 แห่ง
+pnpm --filter backend prisma:seed              # สถานที่ตัวอย่าง 13 แห่ง (เพิ่มเฉพาะที่ยังไม่มี)
 
 cp frontend/.env.example frontend/.env.local
 pnpm dev                                       # backend :4218 + frontend :3218
 ```
 
 เปิด **http://localhost:3218** (ต้องเป็น `localhost` ตรงกับ callback ที่ลงทะเบียน ไม่ใช่ 127.0.0.1)
+
+### รันแบบเดียวกับ server (Docker · standards `docs/deployment.md`)
+
+```bash
+docker compose up -d --build                   # db + api + web → http://localhost:3218 (ใช้ Chrome)
+docker compose ps                              # ทั้งสามต้อง healthy
+docker compose down                            # หยุด (ข้อมูลยังอยู่ใน volume)
+```
+
+image: `backend/Dockerfile` (copy จาก demo) · `frontend/Dockerfile` (copy จาก template ห้ามแก้) ·
+ใน container api ใช้พอร์ต 4000 และ web ใช้ 3000 · `BACKEND_URL` ฝังตอน build เป็น `http://api:4000` ·
+หลัง merge เข้า `main` GitHub build image ให้เอง (แท็บ Actions → Images) เมื่อ `.standards-version` ≥ 1.8.0
+
+ใช้ `docker compose up -d --build` กับ `pnpm dev` พร้อมกันไม่ได้ เพราะใช้พอร์ต 3218 เหมือนกัน
 
 เปิดงานใหม่ทุกครั้งให้แตก branch จาก `main` ตามรูปแบบ `feature/internship-directory/<เรื่องที่ทำ>`
 และอ่าน `standards/docs/github-workflow.md` ข้อ 1 ก่อนเปิด PR
