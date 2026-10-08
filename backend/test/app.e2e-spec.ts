@@ -683,6 +683,204 @@ describe('Internship Directory (e2e)', () => {
       });
     });
 
+    describe('company details and the verified badge', () => {
+      const verify = (token: string, placeId: string, isVerified: boolean) =>
+        request(app.getHttpServer())
+          .patch(`/api/v1/internship-places/${placeId}/verification`)
+          .set(bearer(token))
+          .send({ isVerified });
+
+      it('stores the company contact details in clean form', async () => {
+        const response = await addPlace(
+          studentToken,
+          placeBody({
+            websiteUrl: 'www.example.co.th',
+            contactPhone: '053-123 456',
+            applyEmail: ' HR@Example.co.th ',
+            intakePeriod: 'เปิดรับ ม.ค. - มี.ค. ทุกปี',
+          }),
+        ).expect(201);
+
+        expect(response.body.data).toMatchObject({
+          websiteUrl: 'https://www.example.co.th',
+          contactPhone: '053123456',
+          applyEmail: 'hr@example.co.th',
+          intakePeriod: 'เปิดรับ ม.ค. - มี.ค. ทุกปี',
+          isVerified: false,
+          verifiedAt: null,
+        });
+      });
+
+      it.each([
+        [{ websiteUrl: 'ftp://example.co.th' }],
+        [{ contactPhone: '12ab' }],
+        [{ applyEmail: 'not-an-email' }],
+      ])('refuses a malformed contact detail %j (400)', async (contact) => {
+        const response = await addPlace(studentToken, placeBody(contact)).expect(400);
+        expect(response.body.error.code).toBe('BAD_REQUEST');
+        expect(db.internshipPlace.rows).toHaveLength(0);
+      });
+
+      it('clears a contact detail sent as empty text, and keeps the ones not sent', async () => {
+        const placeId = (
+          await addPlace(staffToken, placeBody({ websiteUrl: 'https://a.example', contactPhone: '0812345678' })).expect(201)
+        ).body.data.id;
+
+        const response = await request(app.getHttpServer())
+          .patch(`/api/v1/internship-places/${placeId}`)
+          .set(bearer(staffToken))
+          .send({ websiteUrl: '' })
+          .expect(200);
+        expect(response.body.data).toMatchObject({ websiteUrl: null, contactPhone: '0812345678' });
+      });
+
+      it('lets STAFF verify a place and take the badge back', async () => {
+        const placeId = (await addPlace(studentToken).expect(201)).body.data.id;
+
+        const verified = await verify(staffToken, placeId, true).expect(200);
+        expect(verified.body.data.isVerified).toBe(true);
+        expect(verified.body.data.verifiedAt).toEqual(expect.any(String));
+        expect(db.internshipPlace.rows[0]).toMatchObject({ verifiedByCoreUserId: STAFF_CORE_ID });
+
+        const listed = await list(studentToken, '?verified=true').expect(200);
+        expect(listed.body.data.map((place: { id: string }) => place.id)).toEqual([placeId]);
+
+        const undone = await verify(adminToken, placeId, false).expect(200);
+        expect(undone.body.data).toMatchObject({ isVerified: false, verifiedAt: null });
+        expect((await list(studentToken, '?verified=true').expect(200)).body.data).toEqual([]);
+      });
+
+      it('does not let a STUDENT verify a place (403)', async () => {
+        const placeId = (await addPlace(studentToken).expect(201)).body.data.id;
+        await verify(studentToken, placeId, true).expect(403);
+        expect(db.internshipPlace.rows[0].isVerified).toBe(false);
+      });
+    });
+
+    describe('reporting and hiding reviews', () => {
+      let placeId: string;
+      let reviewId: string;
+
+      const report = (token: string, body: Record<string, unknown> = { reason: 'OFFENSIVE', detail: 'คำหยาบ' }) =>
+        request(app.getHttpServer())
+          .post(`/api/v1/internship-places/${placeId}/reviews/${reviewId}/reports`)
+          .set(bearer(token))
+          .send(body);
+
+      const setHidden = (token: string, isHidden: boolean, reason?: string) =>
+        request(app.getHttpServer())
+          .patch(`/api/v1/internship-places/${placeId}/reviews/${reviewId}/visibility`)
+          .set(bearer(token))
+          .send({ isHidden, ...(reason ? { reason } : {}) });
+
+      const queue = (token: string, query = '') =>
+        request(app.getHttpServer()).get(`/api/v1/review-reports${query}`).set(bearer(token));
+
+      const place = (token: string) =>
+        request(app.getHttpServer()).get(`/api/v1/internship-places/${placeId}`).set(bearer(token));
+
+      beforeEach(async () => {
+        placeId = (await addPlace(staffToken).expect(201)).body.data.id;
+        reviewId = (await addReview(studentToken, placeId, { score: 1, comment: 'แย่มาก' }).expect(201)).body.data.id;
+        await addReview(alumniToken, placeId, { score: 5 }).expect(201);
+      });
+
+      it('lets another user report a review once, and marks it for them', async () => {
+        const response = await report(otherStudentToken).expect(201);
+        expect(response.body.data).toMatchObject({ id: reviewId, isReportedByMe: true, isHidden: false });
+        expect(response.body.data.openReportCount).toBeUndefined();
+        expect(db.reviewReport.rows[0]).toMatchObject({
+          reviewId,
+          coreUserId: OTHER_STUDENT_CORE_ID,
+          reason: 'OFFENSIVE',
+          detail: 'คำหยาบ',
+          status: 'OPEN',
+        });
+
+        const again = await report(otherStudentToken).expect(409);
+        expect(again.body.error.code).toBe('CONFLICT');
+        expect(db.reviewReport.rows).toHaveLength(1);
+
+        const seen = (await place(otherStudentToken).expect(200)).body.data.reviews;
+        expect(seen.find((review: { id: string }) => review.id === reviewId).isReportedByMe).toBe(true);
+      });
+
+      it('refuses a report on your own review (400), an unknown reason (400) and a VIEWER (403)', async () => {
+        await report(studentToken).expect(400);
+        await report(otherStudentToken, { reason: 'BORING' }).expect(400);
+        const viewer = await signCoreHubToken(key, { sub: 'user-009', role: 'guest' });
+        await report(viewer).expect(403);
+        expect(db.reviewReport.rows).toHaveLength(0);
+      });
+
+      it('shows moderators the queue with open report counts; others get 403', async () => {
+        await report(otherStudentToken).expect(201);
+        await report(alumniToken, { reason: 'FALSE_INFO' }).expect(201);
+
+        await queue(studentToken).expect(403);
+        const response = await queue(staffToken).expect(200);
+        expect(response.body.meta).toMatchObject({ total: 2, page: 1 });
+        expect(response.body.data[0]).toMatchObject({
+          status: 'OPEN',
+          reviewReportCount: 2,
+          placeId,
+          placeName: 'บริษัท เทคโนโลยีเชียงใหม่ ซอฟต์แวร์ จำกัด',
+          review: { id: reviewId, openReportCount: 2, comment: 'แย่มาก' },
+        });
+      });
+
+      it('hides a review: it leaves scores and lists, its reports are settled, its author still sees it', async () => {
+        await report(otherStudentToken).expect(201);
+
+        const hidden = await setHidden(staffToken, true, 'ใช้คำไม่สุภาพ').expect(200);
+        expect(hidden.body.data).toMatchObject({ isHidden: true, hiddenReason: 'ใช้คำไม่สุภาพ', openReportCount: 0 });
+        expect(db.reviewReport.rows[0]).toMatchObject({ status: 'ACTION_TAKEN', resolvedByCoreUserId: STAFF_CORE_ID });
+
+        const forOthers = (await place(otherStudentToken).expect(200)).body.data;
+        expect(forOthers).toMatchObject({ averageScore: 5, reviewCount: 1 });
+        expect(forOthers.reviews.map((review: { id: string }) => review.id)).not.toContain(reviewId);
+        expect(forOthers.scoreDistribution['1']).toBe(0);
+
+        const forAuthor = (await place(studentToken).expect(200)).body.data;
+        expect(forAuthor.reviews.find((review: { id: string }) => review.id === reviewId)).toMatchObject({
+          isMine: true,
+          isHidden: true,
+          hiddenReason: 'ใช้คำไม่สุภาพ',
+        });
+
+        const forStaff = (await place(staffToken).expect(200)).body.data;
+        expect(forStaff.reviews).toHaveLength(2);
+
+        expect((await list(studentToken, '?q=แย่มาก').expect(200)).body.data).toEqual([]);
+        expect((await queue(staffToken).expect(200)).body.data).toEqual([]);
+        expect((await queue(staffToken, '?status=ACTION_TAKEN').expect(200)).body.meta.total).toBe(1);
+
+        await report(alumniToken).expect(409);
+      });
+
+      it('keeps a review and dismisses its reports when a moderator shows it', async () => {
+        await report(otherStudentToken).expect(201);
+        const kept = await setHidden(adminToken, false).expect(200);
+        expect(kept.body.data).toMatchObject({ isHidden: false, hiddenReason: null });
+        expect(db.reviewReport.rows[0]).toMatchObject({ status: 'DISMISSED' });
+        expect((await place(otherStudentToken).expect(200)).body.data.reviewCount).toBe(2);
+      });
+
+      it('does not let a STUDENT hide a review (403)', async () => {
+        await setHidden(otherStudentToken, true).expect(403);
+        expect(db.placeReview.rows.find((review) => review.id === reviewId)?.isHidden).toBe(false);
+      });
+
+      it('removes the reports with the place', async () => {
+        await report(otherStudentToken).expect(201);
+        await request(app.getHttpServer())
+          .delete(`/api/v1/internship-places/${placeId}`)
+          .set(bearer(staffToken))
+          .expect(200);
+        expect(db.reviewReport.rows).toHaveLength(0);
+      });
+    });
+
     describe('when Core Hub cannot answer /people/me', () => {
       it('answers 401 when Core Hub has ended the session, and stores nothing', async () => {
         const placeId = (await addPlace(staffToken).expect(201)).body.data.id;

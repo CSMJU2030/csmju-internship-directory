@@ -44,6 +44,22 @@ model InternshipPlace {
   /// Fields of work, from the closed list in src/internship-places/tags.ts.
   tags                 String[] @default([])
 
+  /// The company's own contact details - never a person's (reference-data.md 8).
+  /// Website, http(s) only.
+  websiteUrl   String? @map("website_url")
+  /// Digits only, an optional leading + (data-dictionary.md 5 Phone: no-hyphen).
+  contactPhone String? @map("contact_phone")
+  /// The address applications go to, e.g. hr@company.co.th.
+  applyEmail   String? @map("apply_email")
+  /// When the place takes interns, in words, e.g. "เปิดรับ ม.ค. - มี.ค. ทุกปี".
+  intakePeriod String? @map("intake_period")
+
+  /// Staff checked that the place exists and takes CS interns.
+  isVerified           Boolean   @default(false) @map("is_verified")
+  verifiedAt           DateTime? @map("verified_at")
+  /// Core Hub `sub` of the staff member who verified it.
+  verifiedByCoreUserId String?   @map("verified_by_core_user_id")
+
   /// Core Hub `sub` of whoever added the place.
   createdByCoreUserId String @map("created_by_core_user_id")
 
@@ -79,6 +95,15 @@ model PlaceReview {
   /// Buddhist-era year of the internship, e.g. 2568.
   internshipYear Int?    @map("internship_year")
 
+  /// Hidden by a moderator: kept for the record, left out of scores and lists.
+  isHidden           Boolean   @default(false) @map("is_hidden")
+  hiddenAt           DateTime? @map("hidden_at")
+  hiddenByCoreUserId String?   @map("hidden_by_core_user_id")
+  /// Why it was hidden - shown to its author and to staff.
+  hiddenReason       String?   @map("hidden_reason")
+
+  reports ReviewReport[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -87,4 +112,47 @@ model PlaceReview {
   @@index([placeId, coreUserId])
   @@index([coreUserId])
   @@map("place_reviews")
+}
+
+enum ReviewReportReason {
+  SPAM
+  OFFENSIVE
+  FALSE_INFO
+  PERSONAL_INFO
+  OTHER
+}
+
+enum ReviewReportStatus {
+  /// Waiting for a moderator.
+  OPEN
+  /// The review was hidden.
+  ACTION_TAKEN
+  /// The review stays as it is.
+  DISMISSED
+}
+
+/// Someone flagged a review as inappropriate; a moderator settles it.
+model ReviewReport {
+  id String @id @default(uuid())
+
+  reviewId String      @map("review_id")
+  review   PlaceReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  /// Who reported it: the Core Hub `sub`. One open report per person per
+  /// review is enforced by the service (core_user_id is never unique).
+  coreUserId String             @map("core_user_id")
+  reason     ReviewReportReason
+  /// Optional words from the reporter.
+  detail     String?
+
+  status               ReviewReportStatus @default(OPEN)
+  resolvedAt           DateTime?          @map("resolved_at")
+  resolvedByCoreUserId String?            @map("resolved_by_core_user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([reviewId, coreUserId])
+  @@index([status])
+  @@map("review_reports")
 }

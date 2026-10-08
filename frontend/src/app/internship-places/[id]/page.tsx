@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowBackIcon, EditIcon, LocationIcon } from "@/csmju";
+import { ArrowBackIcon, EditIcon, EyeIcon, LocationIcon, MailIcon, StatusBadge } from "@/csmju";
 import DeleteButton from "../../../components/features/DeleteButton";
+import HideReviewButton from "../../../components/features/HideReviewButton";
+import ReportButton from "../../../components/features/ReportButton";
 import { ReviewFields } from "../../../components/features/ReviewForm";
 import Stars from "../../../components/features/Stars";
-import { OpenInNewIcon } from "../../../components/icons";
+import VerifiedBadge from "../../../components/features/VerifiedBadge";
+import { LanguageIcon, OpenInNewIcon, PhoneIcon, VerifiedIcon } from "../../../components/icons";
 import { card, link, muted, pageTitle, primaryButton, secondaryButton, sectionTitle, small } from "../../../components/ui";
 import { can, getMe, getPlace, hasSession, isUnauthorized, listTags } from "../../../lib/api";
 import {
@@ -17,7 +20,7 @@ import {
   googleMapsUrl,
   provinceLabel,
 } from "../../../lib/format";
-import { deletePlace, deleteReview, saveReview } from "../../actions";
+import { deletePlace, deleteReview, reportReview, saveReview, setReviewVisibility, setVerification } from "../../actions";
 import Flash from "../../_components/Flash";
 import ReSignIn from "../../_components/ReSignIn";
 import SignedOut from "../../_components/SignedOut";
@@ -66,7 +69,10 @@ export default async function PlacePage({
       </Link>
 
       <div className="fade-slide-up">
-        <h1 className={`${pageTitle} mb-2 break-words`}>{p.name}</h1>
+        <div className="mb-2 flex flex-wrap items-center gap-3">
+          <h1 className={`${pageTitle} break-words`}>{p.name}</h1>
+          {p.isVerified && <VerifiedBadge />}
+        </div>
         <p className={muted}>
           {provinceLabel(p.province)} · ห่าง ม.แม่โจ้ {formatKm(p.distanceKm)} · อันดับ <span className="tabular-nums">#{p.rank}</span>
         </p>
@@ -112,6 +118,8 @@ export default async function PlacePage({
           <dd className="col-span-2 break-words text-on-surface">{p.workHours || "ไม่ระบุ"}</dd>
           <dt className="text-on-surface-variant">สายงาน</dt>
           <dd className="col-span-2 text-on-surface">{p.tags.length ? p.tags.map((tag) => tagLabel.get(tag) ?? tag).join(" · ") : "ไม่ระบุ"}</dd>
+          <dt className="text-on-surface-variant">รอบรับ</dt>
+          <dd className="col-span-2 break-words text-on-surface">{p.intakePeriod || "ไม่ระบุ"}</dd>
           <dt className="text-on-surface-variant">เพิ่มเมื่อ</dt>
           <dd className="col-span-2 text-on-surface">{formatDate(p.createdAt)}</dd>
         </dl>
@@ -120,6 +128,35 @@ export default async function PlacePage({
       <section className={`${card} space-y-4`}>
         <h2 className={sectionTitle}>ข้อควรระวัง / สวัสดิการ</h2>
         <p className="max-w-prose whitespace-pre-line break-words text-body-md text-on-surface">{p.notes}</p>
+        {(p.websiteUrl || p.contactPhone || p.applyEmail) && (
+          <ul className="flex flex-col gap-1" aria-label="ช่องทางติดต่อบริษัท">
+            {p.websiteUrl && (
+              <li>
+                <a className={link} href={p.websiteUrl} target="_blank" rel="noopener noreferrer nofollow">
+                  <LanguageIcon className="h-4 w-4" />
+                  <span className="break-all">{p.websiteUrl.replace(/^https?:\/\//, "")}</span>
+                </a>
+              </li>
+            )}
+            {p.contactPhone && (
+              <li>
+                <a className={link} href={`tel:${p.contactPhone}`}>
+                  <PhoneIcon className="h-4 w-4" />
+                  <span className="tabular-nums">{p.contactPhone}</span>
+                </a>
+              </li>
+            )}
+            {p.applyEmail && (
+              <li>
+                <a className={link} href={`mailto:${p.applyEmail}`}>
+                  <MailIcon className="h-4 w-4" />
+                  <span className="break-all">{p.applyEmail}</span>
+                  <span className={small}>(อีเมลรับสมัคร)</span>
+                </a>
+              </li>
+            )}
+          </ul>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <a className={secondaryButton} href={directionsUrl(p.latitude, p.longitude)} target="_blank" rel="noopener noreferrer">
             <LocationIcon className="h-4 w-4" />
@@ -134,6 +171,16 @@ export default async function PlacePage({
               <EditIcon className="h-4 w-4" />
               แก้ไขข้อมูลสถานที่
             </Link>
+          )}
+          {can.verifyPlaces(me.data) && (
+            <form action={setVerification}>
+              <input type="hidden" name="id" value={p.id} />
+              <input type="hidden" name="isVerified" value={p.isVerified ? "false" : "true"} />
+              <button className={secondaryButton} type="submit">
+                <VerifiedIcon className="h-4 w-4" />
+                {p.isVerified ? "ยกเลิกการยืนยัน" : "ยืนยันสถานที่"}
+              </button>
+            </form>
           )}
           {can.managePlaces(me.data) && (
             <DeleteButton
@@ -172,8 +219,15 @@ export default async function PlacePage({
             {p.reviews.map((review) => (
               <li
                 key={review.id}
-                className={`flex flex-col gap-2 rounded-xl border p-4 ${review.isMine ? "border-primary-container" : "border-outline-variant/40"}`}
+                className={`flex flex-col gap-2 rounded-xl border p-4 ${review.isMine ? "border-primary-container" : "border-outline-variant/40"} ${review.isHidden ? "bg-surface-variant/40" : ""}`}
               >
+                {review.isHidden && (
+                  <p className="flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
+                    <StatusBadge tone="neutral" label="ซ่อนโดยผู้ดูแล" />
+                    {review.isMine ? "คนอื่นไม่เห็นรีวิวนี้และไม่นับคะแนน" : "แสดงให้ผู้ดูแลเห็นเท่านั้น"}
+                    {review.hiddenReason ? ` · เหตุผล: ${review.hiddenReason}` : ""}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-2">
                   <Stars score={review.score} />
                   <span className={small}>
@@ -189,8 +243,34 @@ export default async function PlacePage({
                 ) : (
                   <p className={small}>ให้คะแนนอย่างเดียว</p>
                 )}
-                {(review.isMine || can.moderateReviews(me.data)) && (
-                  <div className="flex justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-1">
+                  {(review.openReportCount ?? 0) > 0 && (
+                    <span className="mr-auto">
+                      <StatusBadge tone="warning" label={`ถูกรายงาน ${review.openReportCount} ครั้ง`} />
+                    </span>
+                  )}
+                  {!review.isMine && !review.isHidden && can.reportReviews(me.data) && (
+                    <ReportButton action={reportReview} placeId={p.id} reviewId={review.id} reported={review.isReportedByMe} />
+                  )}
+                  {can.moderateReviews(me.data) &&
+                    (review.isHidden || (review.openReportCount ?? 0) > 0 ? (
+                      <form action={setReviewVisibility}>
+                        <input type="hidden" name="placeId" value={p.id} />
+                        <input type="hidden" name="reviewId" value={review.id} />
+                        <input type="hidden" name="isHidden" value="false" />
+                        <button
+                          type="submit"
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-label-md text-primary-container transition-colors hover:bg-primary-container/10"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                          {review.isHidden ? "แสดงรีวิว" : "คงรีวิวไว้"}
+                        </button>
+                      </form>
+                    ) : null)}
+                  {can.moderateReviews(me.data) && !review.isHidden && (
+                    <HideReviewButton action={setReviewVisibility} placeId={p.id} reviewId={review.id} />
+                  )}
+                  {(review.isMine || can.moderateReviews(me.data)) && (
                     <DeleteButton
                       action={deleteReview}
                       fields={{ placeId: p.id, reviewId: review.id }}
@@ -198,8 +278,8 @@ export default async function PlacePage({
                       title="ลบรีวิวนี้?"
                       message="รีวิวนี้จะถูกลบ และกู้คืนไม่ได้"
                     />
-                  </div>
-                )}
+                  )}
+                </div>
               </li>
             ))}
           </ul>

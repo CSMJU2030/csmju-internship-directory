@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StatusBadge } from "@/csmju";
 import Stars from "../../components/features/Stars";
 import { RateReviewIcon } from "../../components/icons";
 import { alertError, card, link, muted, pageTitle, primaryButton, small } from "../../components/ui";
@@ -65,6 +66,13 @@ export default async function MyReviewsPage() {
                     </h2>
                     <p className={small}>{provinceLabel(review.placeProvince)}</p>
                   </div>
+                  {review.isHidden && (
+                    <p className="flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
+                      <StatusBadge tone="neutral" label="ซ่อนโดยผู้ดูแล" />
+                      คนอื่นไม่เห็นรีวิวนี้และไม่นับคะแนน
+                      {review.hiddenReason ? ` · เหตุผล: ${review.hiddenReason}` : ""}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     <Stars score={review.score} />
                     <span className={small}>

@@ -103,6 +103,23 @@ export interface paths {
         patch: operations["InternshipPlacesController_update"];
         trace?: never;
     };
+    "/api/v1/internship-places/{id}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Give or take back the "verified" badge. */
+        patch: operations["InternshipPlacesController_setVerification"];
+        trace?: never;
+    };
     "/api/v1/internship-places/{placeId}/reviews": {
         parameters: {
             query?: never;
@@ -135,6 +152,40 @@ export interface paths {
         patch: operations["PlaceReviewsController_update"];
         trace?: never;
     };
+    "/api/v1/internship-places/{placeId}/reviews/{reviewId}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Flag someone else's review as inappropriate; moderators settle it. */
+        post: operations["PlaceReviewsController_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internship-places/{placeId}/reviews/{reviewId}/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Hide the review or show it again; settles its open reports. */
+        patch: operations["PlaceReviewsController_setVisibility"];
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -143,6 +194,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["MeController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewReportsController_findAll"];
         put?: never;
         post?: never;
         delete?: never;
@@ -242,8 +309,14 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         CreatePlaceDto: {
+            /** @description Where applications go, e.g. hr@company.co.th. */
+            applyEmail?: string;
+            /** @description Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +. */
+            contactPhone?: string;
             /** @description Integer satang; 0 when the place pays no allowance. */
             dailyAllowanceSatang?: number;
+            /** @description When the place takes interns, e.g. "เปิดรับ ม.ค. - มี.ค. ทุกปี". */
+            intakePeriod?: string;
             latitude: number;
             longitude: number;
             name: string;
@@ -252,7 +325,18 @@ export interface components {
             /** @description Thai province name, e.g. "เชียงใหม่" (the word "จังหวัด" is dropped). */
             province: string;
             tags?: string[];
+            /** @description Company website, http(s). */
+            websiteUrl?: string;
             workHours?: string;
+        };
+        CreateReportDto: {
+            /** @description Optional words from the reporter. */
+            detail?: string;
+            /**
+             * @description SPAM, OFFENSIVE, FALSE_INFO (not true), PERSONAL_INFO (names someone) or OTHER.
+             * @enum {string}
+             */
+            reason: "SPAM" | "OFFENSIVE" | "FALSE_INFO" | "PERSONAL_INFO" | "OTHER";
         };
         CreateReviewDto: {
             /** @description Optional - a score alone is a review too. An empty text is stored as no text. */
@@ -272,11 +356,22 @@ export interface components {
             comment: string | null;
             /** Format: date-time */
             createdAt: string;
+            /** @description Why it was hidden - to its author and moderators only. */
+            hiddenReason: string | null;
             id: string;
             /** @description Buddhist-era year of the internship. */
             internshipYear: number | null;
+            /**
+             * @description Hidden by a moderator. Only its author and moderators ever get a hidden
+             *     review; it counts in no score.
+             */
+            isHidden: boolean;
             /** @description Whether the caller wrote this review. */
             isMine: boolean;
+            /** @description Whether the caller already has an open report on it. */
+            isReportedByMe: boolean;
+            /** @description Open reports on it - returned to moderators (place-review:moderate) only. */
+            openReportCount?: number;
             /** @description Reviewer's student or staff code - returned to staff (place-review:delete:any) only. */
             personCode?: string | null;
             placeId: string;
@@ -290,8 +385,12 @@ export interface components {
             updatedAt: string;
         };
         PlaceDetailDto: {
-            /** @description Average review score rounded to one decimal; 0 without reviews. */
+            /** @description Where applications go. */
+            applyEmail: string | null;
+            /** @description Average score of the visible reviews, rounded to one decimal; 0 without reviews. */
             averageScore: number;
+            /** @description Digits only, with an optional leading +. */
+            contactPhone: string | null;
             /** Format: date-time */
             createdAt: string;
             /** @description Daily allowance in satang; 0 = none. */
@@ -299,6 +398,10 @@ export interface components {
             /** @description From the university, or from nearLat/nearLng when the list was asked with them. */
             distanceKm: number;
             id: string;
+            /** @description When the place takes interns, in words. */
+            intakePeriod: string | null;
+            /** @description Staff checked that the place exists and takes CS interns. */
+            isVerified: boolean;
             latitude: number;
             longitude: number;
             /** @description The caller's own review of this place, if any. */
@@ -319,11 +422,19 @@ export interface components {
             tags: string[];
             /** Format: date-time */
             updatedAt: string;
+            /** Format: date-time */
+            verifiedAt: string | null;
+            /** @description The company's website, http(s). */
+            websiteUrl: string | null;
             workHours: string | null;
         };
         PlaceSummaryDto: {
-            /** @description Average review score rounded to one decimal; 0 without reviews. */
+            /** @description Where applications go. */
+            applyEmail: string | null;
+            /** @description Average score of the visible reviews, rounded to one decimal; 0 without reviews. */
             averageScore: number;
+            /** @description Digits only, with an optional leading +. */
+            contactPhone: string | null;
             /** Format: date-time */
             createdAt: string;
             /** @description Daily allowance in satang; 0 = none. */
@@ -331,6 +442,10 @@ export interface components {
             /** @description From the university, or from nearLat/nearLng when the list was asked with them. */
             distanceKm: number;
             id: string;
+            /** @description When the place takes interns, in words. */
+            intakePeriod: string | null;
+            /** @description Staff checked that the place exists and takes CS interns. */
+            isVerified: boolean;
             latitude: number;
             longitude: number;
             name: string;
@@ -345,6 +460,10 @@ export interface components {
             tags: string[];
             /** Format: date-time */
             updatedAt: string;
+            /** Format: date-time */
+            verifiedAt: string | null;
+            /** @description The company's website, http(s). */
+            websiteUrl: string | null;
             workHours: string | null;
         };
         PlaceTagDto: {
@@ -362,16 +481,44 @@ export interface components {
             name: string;
             placeCount: number;
         };
+        ReviewReportViewDto: {
+            /** Format: date-time */
+            createdAt: string;
+            detail: string | null;
+            id: string;
+            placeId: string;
+            placeName: string;
+            /** @description SPAM, OFFENSIVE, FALSE_INFO, PERSONAL_INFO or OTHER. */
+            reason: string;
+            /** Format: date-time */
+            resolvedAt: string | null;
+            review: components["schemas"]["ReviewViewDto"];
+            /** @description Reports on the same review, this one included. */
+            reviewReportCount: number;
+            /** @description OPEN, ACTION_TAKEN or DISMISSED. */
+            status: string;
+        };
         ReviewViewDto: {
             /** @description null when the reviewer gave a score only. */
             comment: string | null;
             /** Format: date-time */
             createdAt: string;
+            /** @description Why it was hidden - to its author and moderators only. */
+            hiddenReason: string | null;
             id: string;
             /** @description Buddhist-era year of the internship. */
             internshipYear: number | null;
+            /**
+             * @description Hidden by a moderator. Only its author and moderators ever get a hidden
+             *     review; it counts in no score.
+             */
+            isHidden: boolean;
             /** @description Whether the caller wrote this review. */
             isMine: boolean;
+            /** @description Whether the caller already has an open report on it. */
+            isReportedByMe: boolean;
+            /** @description Open reports on it - returned to moderators (place-review:moderate) only. */
+            openReportCount?: number;
             /** @description Reviewer's student or staff code - returned to staff (place-review:delete:any) only. */
             personCode?: string | null;
             position: string | null;
@@ -387,14 +534,30 @@ export interface components {
             4: number;
             5: number;
         };
+        SetReviewVisibilityDto: {
+            isHidden: boolean;
+            /** @description Why it is hidden - its author sees this. Ignored when showing the review. */
+            reason?: string;
+        };
+        SetVerificationDto: {
+            isVerified: boolean;
+        };
         UpdatePlaceDto: {
+            /** @description Where applications go, e.g. hr@company.co.th. */
+            applyEmail?: string;
+            /** @description Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +. */
+            contactPhone?: string;
             dailyAllowanceSatang?: number;
+            /** @description When the place takes interns, e.g. "เปิดรับ ม.ค. - มี.ค. ทุกปี". */
+            intakePeriod?: string;
             latitude?: number;
             longitude?: number;
             name?: string;
             notes?: string;
             province?: string;
             tags?: string[];
+            /** @description Company website, http(s). */
+            websiteUrl?: string;
             workHours?: string;
         };
         UpdateReviewDto: {
@@ -441,6 +604,8 @@ export interface operations {
                 minRating?: number;
                 /** @description A preset key (`web`) or the words of a field of work users added. */
                 tag?: string;
+                /** @description `true`: only places staff verified. */
+                verified?: "true";
                 /** @description Ranking (default), average score, allowance, review count, distance, newest or name. */
                 sort?: "rank" | "rating" | "allowance" | "reviews" | "distance" | "newest" | "name";
                 /** @description Measure `distanceKm` from here instead of the university (both or neither). */
@@ -668,6 +833,35 @@ export interface operations {
             };
         };
     };
+    InternshipPlacesController_setVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetVerificationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PlaceDetailDto"];
+                        /** @enum {boolean} */
+                        success: true;
+                    };
+                };
+            };
+        };
+    };
     PlaceReviewsController_create: {
         parameters: {
             query?: never;
@@ -753,6 +947,66 @@ export interface operations {
             };
         };
     };
+    PlaceReviewsController_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: string;
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReviewViewDto"];
+                        /** @enum {boolean} */
+                        success: true;
+                    };
+                };
+            };
+        };
+    };
+    PlaceReviewsController_setVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: string;
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetReviewVisibilityDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReviewViewDto"];
+                        /** @enum {boolean} */
+                        success: true;
+                    };
+                };
+            };
+        };
+    };
     MeController_me: {
         parameters: {
             query?: never;
@@ -767,6 +1021,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ReviewReportsController_findAll: {
+        parameters: {
+            query?: {
+                /** @description OPEN (default), ACTION_TAKEN or DISMISSED. */
+                status?: "OPEN" | "ACTION_TAKEN" | "DISMISSED";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReviewReportViewDto"][];
+                        meta?: {
+                            limit: number;
+                            page: number;
+                            total: number;
+                            totalPages: number;
+                        };
+                        /** @enum {boolean} */
+                        success: true;
+                    };
+                };
             };
         };
     };

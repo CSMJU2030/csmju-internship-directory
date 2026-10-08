@@ -3,11 +3,29 @@
     "schemas": {
       "CreatePlaceDto": {
         "properties": {
+          "applyEmail": {
+            "description": "Where applications go, e.g. hr@company.co.th.",
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "contactPhone": {
+            "description": "Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +.",
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
           "dailyAllowanceSatang": {
             "description": "Integer satang; 0 when the place pays no allowance.",
             "maximum": 1000000,
             "minimum": 0,
             "type": "number"
+          },
+          "intakePeriod": {
+            "description": "When the place takes interns, e.g. \"เปิดรับ ม.ค. - มี.ค. ทุกปี\".",
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
           },
           "latitude": {
             "type": "number"
@@ -40,6 +58,12 @@
             },
             "type": "array"
           },
+          "websiteUrl": {
+            "description": "Company website, http(s).",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
           "workHours": {
             "maxLength": 80,
             "minLength": 0,
@@ -52,6 +76,31 @@
           "latitude",
           "longitude",
           "notes"
+        ],
+        "type": "object"
+      },
+      "CreateReportDto": {
+        "properties": {
+          "detail": {
+            "description": "Optional words from the reporter.",
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "reason": {
+            "description": "SPAM, OFFENSIVE, FALSE_INFO (not true), PERSONAL_INFO (names someone) or OTHER.",
+            "enum": [
+              "SPAM",
+              "OFFENSIVE",
+              "FALSE_INFO",
+              "PERSONAL_INFO",
+              "OTHER"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
         ],
         "type": "object"
       },
@@ -111,6 +160,11 @@
             "format": "date-time",
             "type": "string"
           },
+          "hiddenReason": {
+            "description": "Why it was hidden - to its author and moderators only.",
+            "nullable": true,
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -119,9 +173,21 @@
             "nullable": true,
             "type": "number"
           },
+          "isHidden": {
+            "description": "Hidden by a moderator. Only its author and moderators ever get a hidden\nreview; it counts in no score.",
+            "type": "boolean"
+          },
           "isMine": {
             "description": "Whether the caller wrote this review.",
             "type": "boolean"
+          },
+          "isReportedByMe": {
+            "description": "Whether the caller already has an open report on it.",
+            "type": "boolean"
+          },
+          "openReportCount": {
+            "description": "Open reports on it - returned to moderators (place-review:moderate) only.",
+            "type": "number"
           },
           "personCode": {
             "description": "Reviewer's student or staff code - returned to staff (place-review:delete:any) only.",
@@ -161,6 +227,9 @@
           "position",
           "internshipYear",
           "isMine",
+          "isHidden",
+          "hiddenReason",
+          "isReportedByMe",
           "createdAt",
           "updatedAt"
         ],
@@ -168,9 +237,19 @@
       },
       "PlaceDetailDto": {
         "properties": {
+          "applyEmail": {
+            "description": "Where applications go.",
+            "nullable": true,
+            "type": "string"
+          },
           "averageScore": {
-            "description": "Average review score rounded to one decimal; 0 without reviews.",
+            "description": "Average score of the visible reviews, rounded to one decimal; 0 without reviews.",
             "type": "number"
+          },
+          "contactPhone": {
+            "description": "Digits only, with an optional leading +.",
+            "nullable": true,
+            "type": "string"
           },
           "createdAt": {
             "format": "date-time",
@@ -186,6 +265,15 @@
           },
           "id": {
             "type": "string"
+          },
+          "intakePeriod": {
+            "description": "When the place takes interns, in words.",
+            "nullable": true,
+            "type": "string"
+          },
+          "isVerified": {
+            "description": "Staff checked that the place exists and takes CS interns.",
+            "type": "boolean"
           },
           "latitude": {
             "type": "number"
@@ -242,6 +330,16 @@
             "format": "date-time",
             "type": "string"
           },
+          "verifiedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "websiteUrl": {
+            "description": "The company's website, http(s).",
+            "nullable": true,
+            "type": "string"
+          },
           "workHours": {
             "nullable": true,
             "type": "string"
@@ -257,6 +355,12 @@
           "workHours",
           "notes",
           "tags",
+          "websiteUrl",
+          "contactPhone",
+          "applyEmail",
+          "intakePeriod",
+          "isVerified",
+          "verifiedAt",
           "averageScore",
           "reviewCount",
           "rank",
@@ -271,9 +375,19 @@
       },
       "PlaceSummaryDto": {
         "properties": {
+          "applyEmail": {
+            "description": "Where applications go.",
+            "nullable": true,
+            "type": "string"
+          },
           "averageScore": {
-            "description": "Average review score rounded to one decimal; 0 without reviews.",
+            "description": "Average score of the visible reviews, rounded to one decimal; 0 without reviews.",
             "type": "number"
+          },
+          "contactPhone": {
+            "description": "Digits only, with an optional leading +.",
+            "nullable": true,
+            "type": "string"
           },
           "createdAt": {
             "format": "date-time",
@@ -289,6 +403,15 @@
           },
           "id": {
             "type": "string"
+          },
+          "intakePeriod": {
+            "description": "When the place takes interns, in words.",
+            "nullable": true,
+            "type": "string"
+          },
+          "isVerified": {
+            "description": "Staff checked that the place exists and takes CS interns.",
+            "type": "boolean"
           },
           "latitude": {
             "type": "number"
@@ -325,6 +448,16 @@
             "format": "date-time",
             "type": "string"
           },
+          "verifiedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "websiteUrl": {
+            "description": "The company's website, http(s).",
+            "nullable": true,
+            "type": "string"
+          },
           "workHours": {
             "nullable": true,
             "type": "string"
@@ -340,6 +473,12 @@
           "workHours",
           "notes",
           "tags",
+          "websiteUrl",
+          "contactPhone",
+          "applyEmail",
+          "intakePeriod",
+          "isVerified",
+          "verifiedAt",
           "averageScore",
           "reviewCount",
           "rank",
@@ -392,6 +531,60 @@
         ],
         "type": "object"
       },
+      "ReviewReportViewDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "detail": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "placeId": {
+            "type": "string"
+          },
+          "placeName": {
+            "type": "string"
+          },
+          "reason": {
+            "description": "SPAM, OFFENSIVE, FALSE_INFO, PERSONAL_INFO or OTHER.",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "review": {
+            "$ref": "#/components/schemas/ReviewViewDto"
+          },
+          "reviewReportCount": {
+            "description": "Reports on the same review, this one included.",
+            "type": "number"
+          },
+          "status": {
+            "description": "OPEN, ACTION_TAKEN or DISMISSED.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "detail",
+          "status",
+          "reviewReportCount",
+          "placeId",
+          "placeName",
+          "review",
+          "resolvedAt",
+          "createdAt"
+        ],
+        "type": "object"
+      },
       "ReviewViewDto": {
         "properties": {
           "comment": {
@@ -403,6 +596,11 @@
             "format": "date-time",
             "type": "string"
           },
+          "hiddenReason": {
+            "description": "Why it was hidden - to its author and moderators only.",
+            "nullable": true,
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -411,9 +609,21 @@
             "nullable": true,
             "type": "number"
           },
+          "isHidden": {
+            "description": "Hidden by a moderator. Only its author and moderators ever get a hidden\nreview; it counts in no score.",
+            "type": "boolean"
+          },
           "isMine": {
             "description": "Whether the caller wrote this review.",
             "type": "boolean"
+          },
+          "isReportedByMe": {
+            "description": "Whether the caller already has an open report on it.",
+            "type": "boolean"
+          },
+          "openReportCount": {
+            "description": "Open reports on it - returned to moderators (place-review:moderate) only.",
+            "type": "number"
           },
           "personCode": {
             "description": "Reviewer's student or staff code - returned to staff (place-review:delete:any) only.",
@@ -440,6 +650,9 @@
           "position",
           "internshipYear",
           "isMine",
+          "isHidden",
+          "hiddenReason",
+          "isReportedByMe",
           "createdAt",
           "updatedAt"
         ],
@@ -472,12 +685,58 @@
         ],
         "type": "object"
       },
+      "SetReviewVisibilityDto": {
+        "properties": {
+          "isHidden": {
+            "type": "boolean"
+          },
+          "reason": {
+            "description": "Why it is hidden - its author sees this. Ignored when showing the review.",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "isHidden"
+        ],
+        "type": "object"
+      },
+      "SetVerificationDto": {
+        "properties": {
+          "isVerified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isVerified"
+        ],
+        "type": "object"
+      },
       "UpdatePlaceDto": {
         "properties": {
+          "applyEmail": {
+            "description": "Where applications go, e.g. hr@company.co.th.",
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "contactPhone": {
+            "description": "Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +.",
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
           "dailyAllowanceSatang": {
             "maximum": 1000000,
             "minimum": 0,
             "type": "number"
+          },
+          "intakePeriod": {
+            "description": "When the place takes interns, e.g. \"เปิดรับ ม.ค. - มี.ค. ทุกปี\".",
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
           },
           "latitude": {
             "type": "number"
@@ -507,6 +766,12 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "websiteUrl": {
+            "description": "Company website, http(s).",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
           },
           "workHours": {
             "maxLength": 80,
@@ -634,6 +899,18 @@
             "schema": {
               "maxLength": 40,
               "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "`true`: only places staff verified.",
+            "in": "query",
+            "name": "verified",
+            "required": false,
+            "schema": {
+              "enum": [
+                "true"
+              ],
               "type": "string"
             }
           },
@@ -1126,6 +1403,62 @@
         ]
       }
     },
+    "/api/v1/internship-places/{id}/verification": {
+      "patch": {
+        "operationId": "InternshipPlacesController_setVerification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetVerificationDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PlaceDetailDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Give or take back the \"verified\" badge.",
+        "tags": [
+          "internship-places"
+        ]
+      }
+    },
     "/api/v1/internship-places/{placeId}/reviews": {
       "post": {
         "operationId": "PlaceReviewsController_create",
@@ -1295,6 +1628,134 @@
         ]
       }
     },
+    "/api/v1/internship-places/{placeId}/reviews/{reviewId}/reports": {
+      "post": {
+        "operationId": "PlaceReviewsController_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "placeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReviewViewDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Flag someone else's review as inappropriate; moderators settle it.",
+        "tags": [
+          "place-reviews"
+        ]
+      }
+    },
+    "/api/v1/internship-places/{placeId}/reviews/{reviewId}/visibility": {
+      "patch": {
+        "operationId": "PlaceReviewsController_setVisibility",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "placeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReviewVisibilityDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReviewViewDto"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Hide the review or show it again; settles its open reports.",
+        "tags": [
+          "place-reviews"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "MeController_me",
@@ -1306,6 +1767,104 @@
         },
         "tags": [
           "Me"
+        ]
+      }
+    },
+    "/api/v1/review-reports": {
+      "get": {
+        "operationId": "ReviewReportsController_findAll",
+        "parameters": [
+          {
+            "description": "OPEN (default), ACTION_TAKEN or DISMISSED.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "OPEN",
+                "ACTION_TAKEN",
+                "DISMISSED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/ReviewReportViewDto"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ],
+                      "type": "object"
+                    },
+                    "success": {
+                      "enum": [
+                        true
+                      ],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "review-reports"
         ]
       }
     },

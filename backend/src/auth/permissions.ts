@@ -15,12 +15,18 @@ export enum Permission {
   /** Correct any place's details (name, location, allowance, notes, tags). */
   PLACE_UPDATE_ANY = 'internship-place:update:any',
   PLACE_DELETE_ANY = 'internship-place:delete:any',
+  /** Give or take back the "verified" badge. */
+  PLACE_VERIFY = 'internship-place:verify',
 
   REVIEW_CREATE = 'place-review:create',
   REVIEW_UPDATE_OWN = 'place-review:update:own',
   REVIEW_DELETE_OWN = 'place-review:delete:own',
   /** Remove anyone's review (moderation); also shows each reviewer's person code. */
   REVIEW_DELETE_ANY = 'place-review:delete:any',
+  /** Flag someone else's review as inappropriate. */
+  REVIEW_REPORT = 'place-review:report',
+  /** See the report queue, hide or show a review and settle its reports. */
+  REVIEW_MODERATE = 'place-review:moderate',
 }
 
 /** Students and alumni add places and review the ones they interned at. */
@@ -30,14 +36,17 @@ const CONTRIBUTOR_PERMISSIONS: Permission[] = [
   Permission.REVIEW_CREATE,
   Permission.REVIEW_UPDATE_OWN,
   Permission.REVIEW_DELETE_OWN,
+  Permission.REVIEW_REPORT,
 ];
 
-/** Staff curate the directory: they fix or remove places and moderate reviews. */
+/** Staff curate the directory: they fix, verify or remove places and moderate reviews. */
 const STAFF_PERMISSIONS: Permission[] = [
   ...CONTRIBUTOR_PERMISSIONS,
   Permission.PLACE_UPDATE_ANY,
   Permission.PLACE_DELETE_ANY,
+  Permission.PLACE_VERIFY,
   Permission.REVIEW_DELETE_ANY,
+  Permission.REVIEW_MODERATE,
 ];
 
 /** Visitors may look but not write. */

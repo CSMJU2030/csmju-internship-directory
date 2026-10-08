@@ -9,12 +9,15 @@ describe('Subsystem permission model (spec §15, §16)', () => {
       expect(can(role, Permission.REVIEW_CREATE)).toBe(true);
       expect(can(role, Permission.REVIEW_UPDATE_OWN)).toBe(true);
       expect(can(role, Permission.REVIEW_DELETE_OWN)).toBe(true);
+      expect(can(role, Permission.REVIEW_REPORT)).toBe(true);
     });
 
     it("cannot change places or remove other people's reviews", () => {
       expect(can(role, Permission.PLACE_UPDATE_ANY)).toBe(false);
       expect(can(role, Permission.PLACE_DELETE_ANY)).toBe(false);
       expect(can(role, Permission.REVIEW_DELETE_ANY)).toBe(false);
+      expect(can(role, Permission.REVIEW_MODERATE)).toBe(false);
+      expect(can(role, Permission.PLACE_VERIFY)).toBe(false);
     });
   });
 
@@ -24,15 +27,18 @@ describe('Subsystem permission model (spec §15, §16)', () => {
       expect(can(role, Permission.PLACE_READ)).toBe(true);
       expect(can(role, Permission.PLACE_CREATE)).toBe(false);
       expect(can(role, Permission.REVIEW_CREATE)).toBe(false);
+      expect(can(role, Permission.REVIEW_REPORT)).toBe(false);
     });
   });
 
   describe('STAFF', () => {
-    it('curates places and moderates reviews', () => {
+    it('curates and verifies places and moderates reviews', () => {
       const role = SubsystemRole.STAFF;
       expect(can(role, Permission.PLACE_UPDATE_ANY)).toBe(true);
       expect(can(role, Permission.PLACE_DELETE_ANY)).toBe(true);
+      expect(can(role, Permission.PLACE_VERIFY)).toBe(true);
       expect(can(role, Permission.REVIEW_DELETE_ANY)).toBe(true);
+      expect(can(role, Permission.REVIEW_MODERATE)).toBe(true);
     });
   });
 

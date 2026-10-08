@@ -35,7 +35,18 @@ export class PlaceSummaryDto {
   notes!: string;
   /** Keys from GET /api/v1/internship-places/tags (preset keys or users' own words). */
   tags!: string[];
-  /** Average review score rounded to one decimal; 0 without reviews. */
+  /** The company's website, http(s). */
+  websiteUrl!: string | null;
+  /** Digits only, with an optional leading +. */
+  contactPhone!: string | null;
+  /** Where applications go. */
+  applyEmail!: string | null;
+  /** When the place takes interns, in words. */
+  intakePeriod!: string | null;
+  /** Staff checked that the place exists and takes CS interns. */
+  isVerified!: boolean;
+  verifiedAt!: Date | null;
+  /** Average score of the visible reviews, rounded to one decimal; 0 without reviews. */
   averageScore!: number;
   reviewCount!: number;
   /** Position in the ranking of the whole directory (1 = best). */
@@ -58,6 +69,17 @@ export class ReviewViewDto {
   internshipYear!: number | null;
   /** Whether the caller wrote this review. */
   isMine!: boolean;
+  /**
+   * Hidden by a moderator. Only its author and moderators ever get a hidden
+   * review; it counts in no score.
+   */
+  isHidden!: boolean;
+  /** Why it was hidden - to its author and moderators only. */
+  hiddenReason!: string | null;
+  /** Whether the caller already has an open report on it. */
+  isReportedByMe!: boolean;
+  /** Open reports on it - returned to moderators (place-review:moderate) only. */
+  openReportCount?: number;
   /** Reviewer's student or staff code - returned to staff (place-review:delete:any) only. */
   personCode?: string | null;
   createdAt!: Date;
@@ -87,6 +109,23 @@ export class PlaceDetailDto extends PlaceSummaryDto {
   reviews!: ReviewViewDto[];
   /** The caller's own review of this place, if any. */
   myReviewId!: string | null;
+}
+
+/** A report in the moderators' queue, with the review and the place it is about. */
+export class ReviewReportViewDto {
+  id!: string;
+  /** SPAM, OFFENSIVE, FALSE_INFO, PERSONAL_INFO or OTHER. */
+  reason!: string;
+  detail!: string | null;
+  /** OPEN, ACTION_TAKEN or DISMISSED. */
+  status!: string;
+  /** Reports on the same review, this one included. */
+  reviewReportCount!: number;
+  placeId!: string;
+  placeName!: string;
+  review!: ReviewViewDto;
+  resolvedAt!: Date | null;
+  createdAt!: Date;
 }
 
 export class DeletedDto {

@@ -58,6 +58,29 @@ export default function PlaceForm({
       </label>
       <TagPicker tags={tags} initial={place?.tags ?? []} />
 
+      <fieldset className="flex min-w-0 flex-col gap-4 rounded-xl border border-outline-variant/40 p-4">
+        <legend className="px-1 text-label-md text-on-surface">ช่องทางติดต่อบริษัท (ไม่บังคับ · ใส่ของบริษัท ไม่ใช่ของบุคคล)</legend>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className={fieldLabel}>
+            เว็บไซต์
+            {/* Text, not type="url": the backend adds https:// to "www.example.co.th". */}
+            <input className={input} name="websiteUrl" inputMode="url" maxLength={200} defaultValue={place?.websiteUrl ?? ""} placeholder="https://www.example.co.th" />
+          </label>
+          <label className={fieldLabel}>
+            เบอร์ติดต่อ
+            <input className={input} name="contactPhone" type="tel" inputMode="tel" maxLength={30} defaultValue={place?.contactPhone ?? ""} placeholder="053123456" />
+          </label>
+          <label className={fieldLabel}>
+            อีเมลรับสมัคร
+            <input className={input} name="applyEmail" type="email" inputMode="email" maxLength={120} defaultValue={place?.applyEmail ?? ""} placeholder="hr@example.co.th" />
+          </label>
+          <label className={fieldLabel}>
+            รอบรับฝึกงาน
+            <input className={input} name="intakePeriod" maxLength={120} defaultValue={place?.intakePeriod ?? ""} placeholder="เปิดรับ ม.ค. - มี.ค. ทุกปี" />
+          </label>
+        </div>
+      </fieldset>
+
       <LocationPicker initial={place ? { lat: place.latitude, lng: place.longitude } : undefined} />
 
       {withReview && (

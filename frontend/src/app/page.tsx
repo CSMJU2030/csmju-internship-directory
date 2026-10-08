@@ -4,6 +4,7 @@ import { SearchIcon } from "@/csmju";
 import NearMeButton from "../components/features/NearMeButton";
 import PlacesMap from "../components/features/PlacesMap";
 import Stars from "../components/features/Stars";
+import VerifiedBadge from "../components/features/VerifiedBadge";
 import { MapIcon, SearchOffIcon } from "../components/icons";
 import { alertError, card, fieldLabel, input, link, muted, pageTitle, primaryButton, secondaryButton, small, tag } from "../components/ui";
 import { can, getMe, hasSession, isUnauthorized, listPlaces, listProvinces, listTags, type PlaceQuery } from "../lib/api";
@@ -139,6 +140,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             ))}
           </select>
         </label>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 self-end text-label-md text-on-surface">
+          <input type="checkbox" name="verified" value="true" defaultChecked={query.verified === "true"} className="h-4 w-4 accent-primary-container" />
+          เฉพาะที่ยืนยันแล้ว
+        </label>
         {near && (
           <>
             <input type="hidden" name="nearLat" value={query.nearLat} />
@@ -235,6 +240,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                         {place.name}
                       </Link>
                     </h2>
+                    {place.isVerified && (
+                      <p className="mt-1">
+                        <VerifiedBadge />
+                      </p>
+                    )}
                     <p className={small}>
                       {provinceLabel(place.province)} · {near ? "ห่างจากคุณ" : "ห่าง ม.แม่โจ้"} {formatKm(place.distanceKm)}
                     </p>

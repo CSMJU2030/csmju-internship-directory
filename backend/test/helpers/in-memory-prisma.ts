@@ -182,6 +182,12 @@ class Table {
     return this.withInclude(row, include);
   }
 
+  async updateMany({ where, data }: { where?: Row; data: Row }): Promise<{ count: number }> {
+    const rows = this.rows.filter((row) => matches(row, where));
+    for (const row of rows) Object.assign(row, data, { updatedAt: new Date() });
+    return { count: rows.length };
+  }
+
   async deleteMany({ where }: { where?: Row } = {}): Promise<{ count: number }> {
     const before = this.rows.length;
     this.rows = this.rows.filter((row) => !matches(row, where));
@@ -201,12 +207,19 @@ class Table {
   }
 }
 
-/** The subsystem database: internship places and their reviews. */
+/** The subsystem database: internship places, their reviews and reports on them. */
 export class InMemoryPrisma {
   internshipPlace = new Table(['nameKey'], [], () => ({
     dailyAllowanceSatang: 0,
     workHours: null,
     tags: [],
+    websiteUrl: null,
+    contactPhone: null,
+    applyEmail: null,
+    intakePeriod: null,
+    isVerified: false,
+    verifiedAt: null,
+    verifiedByCoreUserId: null,
   }));
 
   placeReview = new Table([], [], () => ({
@@ -214,6 +227,17 @@ export class InMemoryPrisma {
     comment: null,
     position: null,
     internshipYear: null,
+    isHidden: false,
+    hiddenAt: null,
+    hiddenByCoreUserId: null,
+    hiddenReason: null,
+  }));
+
+  reviewReport = new Table([], [], () => ({
+    detail: null,
+    status: 'OPEN',
+    resolvedAt: null,
+    resolvedByCoreUserId: null,
   }));
 
   async $connect(): Promise<void> {}
@@ -243,5 +267,6 @@ export class InMemoryPrisma {
   reset(): void {
     this.internshipPlace.rows = [];
     this.placeReview.rows = [];
+    this.reviewReport.rows = [];
   }
 }

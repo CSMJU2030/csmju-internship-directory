@@ -7,6 +7,7 @@ import { RequirePermissions } from '../auth/decorators/require-permissions.decor
 import { Permission } from '../auth/permissions';
 import { ApiEnvelope } from '../openapi/api-envelope.decorator';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateReportDto, SetReviewVisibilityDto } from './dto/moderation.dto';
 import { DeletedDto, ReviewViewDto } from './dto/place-responses';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { InternshipPlacesService } from './internship-places.service';
@@ -42,6 +43,32 @@ export class PlaceReviewsController {
     @Body() dto: UpdateReviewDto,
   ): Promise<ReviewViewDto> {
     return this.places.updateReview(user, placeId, reviewId, dto);
+  }
+
+  /** Flag someone else's review as inappropriate; moderators settle it. */
+  @Post(':reviewId/reports')
+  @RequirePermissions(Permission.REVIEW_REPORT)
+  @ApiEnvelope(ReviewViewDto, { status: 201 })
+  report(
+    @CurrentUser() user: CoreHubIdentity,
+    @Param('placeId', ParseUUIDPipe) placeId: string,
+    @Param('reviewId', ParseUUIDPipe) reviewId: string,
+    @Body() dto: CreateReportDto,
+  ): Promise<ReviewViewDto> {
+    return this.places.reportReview(user, placeId, reviewId, dto);
+  }
+
+  /** Hide the review or show it again; settles its open reports. */
+  @Patch(':reviewId/visibility')
+  @RequirePermissions(Permission.REVIEW_MODERATE)
+  @ApiEnvelope(ReviewViewDto)
+  setVisibility(
+    @CurrentUser() user: CoreHubIdentity,
+    @Param('placeId', ParseUUIDPipe) placeId: string,
+    @Param('reviewId', ParseUUIDPipe) reviewId: string,
+    @Body() dto: SetReviewVisibilityDto,
+  ): Promise<ReviewViewDto> {
+    return this.places.setReviewVisibility(user, placeId, reviewId, dto);
   }
 
   @Delete(':reviewId')
