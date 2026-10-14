@@ -355,8 +355,14 @@ export class InternshipPlacesService {
   ): Promise<{ id: string; deleted: true }> {
     const review = await this.loadReview(placeId, reviewId);
     const isAuthor = review.coreUserId === user.id;
-    if (!isAuthor && !can(user.subsystemRole, Permission.REVIEW_DELETE_ANY)) {
+    const moderator = can(user.subsystemRole, Permission.REVIEW_DELETE_ANY);
+    if (!isAuthor && !moderator) {
       throw AppException.forbidden('ลบได้เฉพาะรีวิวของตัวเอง');
+    }
+    // Deleting a hidden review would free the one-review slot, and the same
+    // text could be posted again unhidden - so its author keeps it.
+    if (review.isHidden && !moderator) {
+      throw AppException.forbidden('รีวิวนี้ถูกซ่อนโดยผู้ดูแล ลบหรือโพสต์ใหม่แทนไม่ได้ ติดต่อผู้ดูแลถ้าเห็นว่าไม่ถูกต้อง');
     }
     await this.prisma.$transaction([
       this.prisma.reviewReport.deleteMany({ where: { reviewId } }),
@@ -562,10 +568,14 @@ export class InternshipPlacesService {
     return out;
   }
 
-  /** An empty text clears it; otherwise a plain address, stored lower-case. */
+  /**
+   * An empty text clears it; otherwise a plain address, stored lower-case.
+   * The page builds `mailto:` from it, so `?`, `&`, `=` and `%` are refused -
+   * "hr@x.co?bcc=..." would copy every application to someone else.
+   */
   private cleanEmail(value: string, label: string): string | null {
     if (!value) return null;
-    if (!/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(value)) {
+    if (!/^[a-z0-9._+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(value)) {
       throw AppException.badRequest(`${label}ไม่ถูกต้อง`);
     }
     return value.toLowerCase();

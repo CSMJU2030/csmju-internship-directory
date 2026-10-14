@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { ROUTES_OUTSIDE_API_PREFIX, configureApp } from '../../src/app-setup';
 import { AppModule } from '../../src/app.module';
@@ -27,8 +28,10 @@ export async function bootApp(
       .useValue(db)
       .compile();
 
-    const app = moduleRef.createNestApplication();
-    // The same two calls main.ts makes.
+    // Body parsing and the calls below are the same as in main.ts.
+    const app = moduleRef.createNestApplication<NestExpressApplication>({ bodyParser: false });
+    app.useBodyParser('json');
+    app.disable('x-powered-by');
     app.setGlobalPrefix('api', { exclude: ROUTES_OUTSIDE_API_PREFIX });
     configureApp(app);
     await app.init();

@@ -295,7 +295,8 @@ export default async function PlacePage({
                   {can.moderateReviews(me.data) && !review.isHidden && (
                     <HideReviewButton action={setReviewVisibility} placeId={p.id} reviewId={review.id} />
                   )}
-                  {(review.isMine || can.moderateReviews(me.data)) && (
+                  {/* The author of a hidden review cannot delete it (it would only be posted again). */}
+                  {((review.isMine && !review.isHidden) || can.moderateReviews(me.data)) && (
                     <DeleteButton
                       action={deleteReview}
                       fields={{ placeId: p.id, reviewId: review.id }}

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { CoreHubJwtGuard } from './auth/guards/core-hub-jwt.guard';
+import { JsonBodyGuard } from './common/guards/json-body.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -26,6 +27,8 @@ import { PrismaModule } from './prisma/prisma.module';
   ],
   providers: [
     // Every route is authenticated unless explicitly marked @Public().
+    // A form posted from another site is refused before anything else (CSRF).
+    { provide: APP_GUARD, useClass: JsonBodyGuard },
     { provide: APP_GUARD, useClass: CoreHubJwtGuard },
     // Authorization runs after authentication.
     { provide: APP_GUARD, useClass: PermissionsGuard },

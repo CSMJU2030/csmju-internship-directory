@@ -735,6 +735,7 @@ describe('Internship Directory (e2e)', () => {
         [{ contactPhone: '12ab' }],
         [{ applyEmail: 'not-an-email' }],
         [{ contactEmail: 'a@b' }],
+        [{ applyEmail: 'hr@x.co?bcc=attacker%40evil.com' }],
         [{ facebookUrl: 'https://evil.example/facebook.com' }],
         [{ facebookUrl: 'https://notfacebook.com/page' }],
         [{ linkedinUrl: 'https://facebook.com/page' }],
@@ -892,6 +893,33 @@ describe('Internship Directory (e2e)', () => {
       it('does not let a STUDENT hide a review (403)', async () => {
         await setHidden(otherStudentToken, true).expect(403);
         expect(db.placeReview.rows.find((review) => review.id === reviewId)?.isHidden).toBe(false);
+      });
+
+      it('does not let the author delete a hidden review to post it again (403); staff still can', async () => {
+        await setHidden(staffToken, true).expect(200);
+        const review = () =>
+          request(app.getHttpServer()).delete(`/api/v1/internship-places/${placeId}/reviews/${reviewId}`);
+
+        await review().set(bearer(studentToken)).expect(403);
+        await addReview(studentToken, placeId, { score: 5, comment: 'แย่มาก' }).expect(409);
+        await review().set(bearer(staffToken)).expect(200);
+      });
+
+      it('refuses a form-encoded report - a cross-site form cannot act for the user (400)', async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/api/v1/internship-places/${placeId}/reviews/${reviewId}/reports`)
+          .set(bearer(otherStudentToken))
+          .type('form')
+          .send({ reason: 'SPAM' })
+          .expect(400);
+        expect(response.body.error.code).toBe('BAD_REQUEST');
+        expect(db.reviewReport.rows).toHaveLength(0);
+      });
+
+      it('marks API answers as not cacheable', async () => {
+        const response = await place(otherStudentToken).expect(200);
+        expect(response.headers['cache-control']).toBe('no-store');
+        expect(response.headers['x-powered-by']).toBeUndefined();
       });
 
       it('removes the reports with the place', async () => {

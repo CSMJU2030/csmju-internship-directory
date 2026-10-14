@@ -20,6 +20,24 @@ const nextConfig: NextConfig = {
   // pnpm keeps dependencies at the workspace root (the repo root), so tracing
   // has to start there or the standalone bundle misses them.
   outputFileTracingRoot: path.join(__dirname, ".."),
+  poweredByHeader: false,
+  // Every subsystem is a sibling *.jowave.com site, so a page there could frame
+  // this one with the user's cookie (clickjacking delete/hide buttons).
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // "ใกล้ฉัน" asks for the location on this site only.
+          { key: "Permissions-Policy", value: "geolocation=(self), camera=(), microphone=()" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` },
