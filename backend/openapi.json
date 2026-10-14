@@ -9,6 +9,12 @@
             "minLength": 0,
             "type": "string"
           },
+          "contactEmail": {
+            "description": "The company's general address, e.g. contact@company.co.th.",
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
           "contactPhone": {
             "description": "Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +.",
             "maxLength": 30,
@@ -21,6 +27,12 @@
             "minimum": 0,
             "type": "number"
           },
+          "facebookUrl": {
+            "description": "The company's Facebook page - facebook.com or fb.com.",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
           "intakePeriod": {
             "description": "When the place takes interns, e.g. \"เปิดรับ ม.ค. - มี.ค. ทุกปี\".",
             "maxLength": 120,
@@ -29,6 +41,12 @@
           },
           "latitude": {
             "type": "number"
+          },
+          "linkedinUrl": {
+            "description": "The company's LinkedIn page - linkedin.com.",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
           },
           "longitude": {
             "type": "number"
@@ -246,6 +264,11 @@
             "description": "Average score of the visible reviews, rounded to one decimal; 0 without reviews.",
             "type": "number"
           },
+          "contactEmail": {
+            "description": "The company's general email.",
+            "nullable": true,
+            "type": "string"
+          },
           "contactPhone": {
             "description": "Digits only, with an optional leading +.",
             "nullable": true,
@@ -263,6 +286,11 @@
             "description": "From the university, or from nearLat/nearLng when the list was asked with them.",
             "type": "number"
           },
+          "facebookUrl": {
+            "description": "The company's Facebook page.",
+            "nullable": true,
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -277,6 +305,11 @@
           },
           "latitude": {
             "type": "number"
+          },
+          "linkedinUrl": {
+            "description": "The company's LinkedIn page.",
+            "nullable": true,
+            "type": "string"
           },
           "longitude": {
             "type": "number"
@@ -357,7 +390,10 @@
           "tags",
           "websiteUrl",
           "contactPhone",
+          "contactEmail",
           "applyEmail",
+          "facebookUrl",
+          "linkedinUrl",
           "intakePeriod",
           "isVerified",
           "verifiedAt",
@@ -384,6 +420,11 @@
             "description": "Average score of the visible reviews, rounded to one decimal; 0 without reviews.",
             "type": "number"
           },
+          "contactEmail": {
+            "description": "The company's general email.",
+            "nullable": true,
+            "type": "string"
+          },
           "contactPhone": {
             "description": "Digits only, with an optional leading +.",
             "nullable": true,
@@ -401,6 +442,11 @@
             "description": "From the university, or from nearLat/nearLng when the list was asked with them.",
             "type": "number"
           },
+          "facebookUrl": {
+            "description": "The company's Facebook page.",
+            "nullable": true,
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -415,6 +461,11 @@
           },
           "latitude": {
             "type": "number"
+          },
+          "linkedinUrl": {
+            "description": "The company's LinkedIn page.",
+            "nullable": true,
+            "type": "string"
           },
           "longitude": {
             "type": "number"
@@ -475,7 +526,10 @@
           "tags",
           "websiteUrl",
           "contactPhone",
+          "contactEmail",
           "applyEmail",
+          "facebookUrl",
+          "linkedinUrl",
           "intakePeriod",
           "isVerified",
           "verifiedAt",
@@ -721,6 +775,12 @@
             "minLength": 0,
             "type": "string"
           },
+          "contactEmail": {
+            "description": "The company's general address, e.g. contact@company.co.th.",
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
           "contactPhone": {
             "description": "Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +.",
             "maxLength": 30,
@@ -732,6 +792,12 @@
             "minimum": 0,
             "type": "number"
           },
+          "facebookUrl": {
+            "description": "The company's Facebook page - facebook.com or fb.com.",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
           "intakePeriod": {
             "description": "When the place takes interns, e.g. \"เปิดรับ ม.ค. - มี.ค. ทุกปี\".",
             "maxLength": 120,
@@ -740,6 +806,12 @@
           },
           "latitude": {
             "type": "number"
+          },
+          "linkedinUrl": {
+            "description": "The company's LinkedIn page - linkedin.com.",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
           },
           "longitude": {
             "type": "number"

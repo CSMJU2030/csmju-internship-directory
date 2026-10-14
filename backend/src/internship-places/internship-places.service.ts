@@ -223,7 +223,10 @@ export class InternshipPlacesService {
         tags: normalizeTags(dto.tags ?? []),
         websiteUrl: contact.websiteUrl ?? null,
         contactPhone: contact.contactPhone ?? null,
+        contactEmail: contact.contactEmail ?? null,
         applyEmail: contact.applyEmail ?? null,
+        facebookUrl: contact.facebookUrl ?? null,
+        linkedinUrl: contact.linkedinUrl ?? null,
         intakePeriod: contact.intakePeriod ?? null,
         createdByCoreUserId: user.id,
       },
@@ -528,6 +531,16 @@ export class InternshipPlacesService {
     const website = given(dto.websiteUrl);
     if (website !== undefined) out.websiteUrl = website ? this.cleanWebsite(website) : null;
 
+    const facebook = given(dto.facebookUrl);
+    if (facebook !== undefined) {
+      out.facebookUrl = facebook ? this.cleanWebsite(facebook, ['facebook.com', 'fb.com'], 'Facebook') : null;
+    }
+
+    const linkedin = given(dto.linkedinUrl);
+    if (linkedin !== undefined) {
+      out.linkedinUrl = linkedin ? this.cleanWebsite(linkedin, ['linkedin.com'], 'LinkedIn') : null;
+    }
+
     const phone = given(dto.contactPhone);
     if (phone !== undefined) {
       // data-dictionary.md 5: phone numbers are stored without hyphens.
@@ -538,32 +551,48 @@ export class InternshipPlacesService {
       out.contactPhone = digits || null;
     }
 
-    const email = given(dto.applyEmail);
-    if (email !== undefined) {
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw AppException.badRequest('อีเมลรับสมัครไม่ถูกต้อง');
-      }
-      out.applyEmail = email.toLowerCase() || null;
-    }
+    const applyEmail = given(dto.applyEmail);
+    if (applyEmail !== undefined) out.applyEmail = this.cleanEmail(applyEmail, 'อีเมลรับสมัคร');
+
+    const contactEmail = given(dto.contactEmail);
+    if (contactEmail !== undefined) out.contactEmail = this.cleanEmail(contactEmail, 'อีเมลติดต่อ');
 
     const intake = given(dto.intakePeriod);
     if (intake !== undefined) out.intakePeriod = intake || null;
     return out;
   }
 
-  /** http(s) only; "www.example.com" becomes "https://www.example.com". */
-  private cleanWebsite(value: string): string {
+  /** An empty text clears it; otherwise a plain address, stored lower-case. */
+  private cleanEmail(value: string, label: string): string | null {
+    if (!value) return null;
+    if (!/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(value)) {
+      throw AppException.badRequest(`${label}ไม่ถูกต้อง`);
+    }
+    return value.toLowerCase();
+  }
+
+  /**
+   * http(s) only - the page puts it in a link, so never `javascript:` or
+   * `data:`. "www.example.com" becomes "https://www.example.com". With
+   * `hosts`, the address must be on one of them or a subdomain (m.facebook.com).
+   */
+  private cleanWebsite(value: string, hosts?: string[], label = 'เว็บไซต์'): string {
     const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value}`;
     let url: URL;
     try {
       url = new URL(withScheme);
     } catch {
-      throw AppException.badRequest('เว็บไซต์ไม่ถูกต้อง');
+      throw AppException.badRequest(`${label}ไม่ถูกต้อง`);
     }
-    if ((url.protocol !== 'https:' && url.protocol !== 'http:') || !url.hostname.includes('.')) {
-      throw AppException.badRequest('เว็บไซต์ต้องขึ้นต้นด้วย http:// หรือ https://');
+    if ((url.protocol !== 'https:' && url.protocol !== 'http:') || !url.hostname.includes('.') || url.username || url.password) {
+      throw AppException.badRequest(`${label}ต้องขึ้นต้นด้วย http:// หรือ https://`);
     }
-    return withScheme;
+    const host = url.hostname.toLowerCase();
+    if (hosts && !hosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`))) {
+      throw AppException.badRequest(`${label}ต้องเป็นลิงก์ของ ${hosts.join(' หรือ ')}`);
+    }
+    // Encoded by URL (no spaces or quotes), without the "/" it adds to a bare host.
+    return url.pathname === '/' && !url.search && !url.hash && !withScheme.endsWith('/') ? url.toString().slice(0, -1) : url.toString();
   }
 
   /** Which of these reviews the caller reported, and - for moderators - how many open reports each has. */
@@ -639,7 +668,10 @@ export class InternshipPlacesService {
       tags: place.tags,
       websiteUrl: place.websiteUrl,
       contactPhone: place.contactPhone,
+      contactEmail: place.contactEmail,
       applyEmail: place.applyEmail,
+      facebookUrl: place.facebookUrl,
+      linkedinUrl: place.linkedinUrl,
       intakePeriod: place.intakePeriod,
       isVerified: place.isVerified,
       verifiedAt: place.verifiedAt,

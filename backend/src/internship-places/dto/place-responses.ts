@@ -39,8 +39,14 @@ export class PlaceSummaryDto {
   websiteUrl!: string | null;
   /** Digits only, with an optional leading +. */
   contactPhone!: string | null;
+  /** The company's general email. */
+  contactEmail!: string | null;
   /** Where applications go. */
   applyEmail!: string | null;
+  /** The company's Facebook page. */
+  facebookUrl!: string | null;
+  /** The company's LinkedIn page. */
+  linkedinUrl!: string | null;
   /** When the place takes interns, in words. */
   intakePeriod!: string | null;
   /** Staff checked that the place exists and takes CS interns. */

@@ -311,13 +311,19 @@ export interface components {
         CreatePlaceDto: {
             /** @description Where applications go, e.g. hr@company.co.th. */
             applyEmail?: string;
+            /** @description The company's general address, e.g. contact@company.co.th. */
+            contactEmail?: string;
             /** @description Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +. */
             contactPhone?: string;
             /** @description Integer satang; 0 when the place pays no allowance. */
             dailyAllowanceSatang?: number;
+            /** @description The company's Facebook page - facebook.com or fb.com. */
+            facebookUrl?: string;
             /** @description When the place takes interns, e.g. "เปิดรับ ม.ค. - มี.ค. ทุกปี". */
             intakePeriod?: string;
             latitude: number;
+            /** @description The company's LinkedIn page - linkedin.com. */
+            linkedinUrl?: string;
             longitude: number;
             name: string;
             /** @description Things to watch out for and benefits. */
@@ -389,6 +395,8 @@ export interface components {
             applyEmail: string | null;
             /** @description Average score of the visible reviews, rounded to one decimal; 0 without reviews. */
             averageScore: number;
+            /** @description The company's general email. */
+            contactEmail: string | null;
             /** @description Digits only, with an optional leading +. */
             contactPhone: string | null;
             /** Format: date-time */
@@ -397,12 +405,16 @@ export interface components {
             dailyAllowanceSatang: number;
             /** @description From the university, or from nearLat/nearLng when the list was asked with them. */
             distanceKm: number;
+            /** @description The company's Facebook page. */
+            facebookUrl: string | null;
             id: string;
             /** @description When the place takes interns, in words. */
             intakePeriod: string | null;
             /** @description Staff checked that the place exists and takes CS interns. */
             isVerified: boolean;
             latitude: number;
+            /** @description The company's LinkedIn page. */
+            linkedinUrl: string | null;
             longitude: number;
             /** @description The caller's own review of this place, if any. */
             myReviewId: string | null;
@@ -433,6 +445,8 @@ export interface components {
             applyEmail: string | null;
             /** @description Average score of the visible reviews, rounded to one decimal; 0 without reviews. */
             averageScore: number;
+            /** @description The company's general email. */
+            contactEmail: string | null;
             /** @description Digits only, with an optional leading +. */
             contactPhone: string | null;
             /** Format: date-time */
@@ -441,12 +455,16 @@ export interface components {
             dailyAllowanceSatang: number;
             /** @description From the university, or from nearLat/nearLng when the list was asked with them. */
             distanceKm: number;
+            /** @description The company's Facebook page. */
+            facebookUrl: string | null;
             id: string;
             /** @description When the place takes interns, in words. */
             intakePeriod: string | null;
             /** @description Staff checked that the place exists and takes CS interns. */
             isVerified: boolean;
             latitude: number;
+            /** @description The company's LinkedIn page. */
+            linkedinUrl: string | null;
             longitude: number;
             name: string;
             /** @description Things to watch out for and benefits. */
@@ -545,12 +563,18 @@ export interface components {
         UpdatePlaceDto: {
             /** @description Where applications go, e.g. hr@company.co.th. */
             applyEmail?: string;
+            /** @description The company's general address, e.g. contact@company.co.th. */
+            contactEmail?: string;
             /** @description Spaces, hyphens and brackets are dropped; stored as digits with an optional leading +. */
             contactPhone?: string;
             dailyAllowanceSatang?: number;
+            /** @description The company's Facebook page - facebook.com or fb.com. */
+            facebookUrl?: string;
             /** @description When the place takes interns, e.g. "เปิดรับ ม.ค. - มี.ค. ทุกปี". */
             intakePeriod?: string;
             latitude?: number;
+            /** @description The company's LinkedIn page - linkedin.com. */
+            linkedinUrl?: string;
             longitude?: number;
             name?: string;
             notes?: string;

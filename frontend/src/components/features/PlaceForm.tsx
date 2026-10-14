@@ -71,8 +71,20 @@ export default function PlaceForm({
             <input className={input} name="contactPhone" type="tel" inputMode="tel" maxLength={30} defaultValue={place?.contactPhone ?? ""} placeholder="053123456" />
           </label>
           <label className={fieldLabel}>
+            อีเมลติดต่อ
+            <input className={input} name="contactEmail" type="email" inputMode="email" maxLength={120} defaultValue={place?.contactEmail ?? ""} placeholder="contact@example.co.th" />
+          </label>
+          <label className={fieldLabel}>
             อีเมลรับสมัคร
             <input className={input} name="applyEmail" type="email" inputMode="email" maxLength={120} defaultValue={place?.applyEmail ?? ""} placeholder="hr@example.co.th" />
+          </label>
+          <label className={fieldLabel}>
+            Facebook Page
+            <input className={input} name="facebookUrl" inputMode="url" maxLength={200} defaultValue={place?.facebookUrl ?? ""} placeholder="facebook.com/ชื่อเพจ" />
+          </label>
+          <label className={fieldLabel}>
+            LinkedIn
+            <input className={input} name="linkedinUrl" inputMode="url" maxLength={200} defaultValue={place?.linkedinUrl ?? ""} placeholder="linkedin.com/company/ชื่อบริษัท" />
           </label>
           <label className={fieldLabel}>
             รอบรับฝึกงาน

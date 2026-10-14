@@ -114,3 +114,22 @@ export function PhoneIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** A generic "social page" mark (a page with a thumbs-up) - brand logos are not drawn here. */
+export function PublicPageIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M9 17v-5.5M9 11.5h1.8l1.7-3.3a1 1 0 0 1 1.9.5L14 11h2.6a1 1 0 0 1 1 1.2l-.8 3.8a1 1 0 0 1-1 .8H9" />
+    </svg>
+  );
+}
+
+export function WorkIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <rect x="3.5" y="7.5" width="17" height="12" rx="2" />
+      <path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 12.5h17" />
+    </svg>
+  );
+}

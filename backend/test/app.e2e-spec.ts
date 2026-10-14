@@ -711,10 +711,33 @@ describe('Internship Directory (e2e)', () => {
         });
       });
 
+      it('stores the general email and the Facebook and LinkedIn pages', async () => {
+        const response = await addPlace(
+          studentToken,
+          placeBody({
+            contactEmail: 'Contact@Example.co.th',
+            facebookUrl: 'facebook.com/examplecompany',
+            linkedinUrl: 'https://www.linkedin.com/company/example',
+          }),
+        ).expect(201);
+
+        expect(response.body.data).toMatchObject({
+          contactEmail: 'contact@example.co.th',
+          facebookUrl: 'https://facebook.com/examplecompany',
+          linkedinUrl: 'https://www.linkedin.com/company/example',
+        });
+      });
+
       it.each([
         [{ websiteUrl: 'ftp://example.co.th' }],
+        [{ websiteUrl: 'javascript:alert(1)' }],
+        [{ websiteUrl: 'https://user:pass@example.co.th' }],
         [{ contactPhone: '12ab' }],
         [{ applyEmail: 'not-an-email' }],
+        [{ contactEmail: 'a@b' }],
+        [{ facebookUrl: 'https://evil.example/facebook.com' }],
+        [{ facebookUrl: 'https://notfacebook.com/page' }],
+        [{ linkedinUrl: 'https://facebook.com/page' }],
       ])('refuses a malformed contact detail %j (400)', async (contact) => {
         const response = await addPlace(studentToken, placeBody(contact)).expect(400);
         expect(response.body.error.code).toBe('BAD_REQUEST');

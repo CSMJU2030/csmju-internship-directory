@@ -19,6 +19,24 @@ export class PlaceContactDto {
   @Length(0, 30, { message: 'contactPhone ยาวเกิน 30 ตัวอักษร' })
   contactPhone?: string;
 
+  /** The company's general address, e.g. contact@company.co.th. */
+  @IsOptional()
+  @IsString({ message: 'contactEmail ต้องเป็นข้อความ' })
+  @Length(0, 120, { message: 'contactEmail ยาวเกิน 120 ตัวอักษร' })
+  contactEmail?: string;
+
+  /** The company's Facebook page - facebook.com or fb.com. */
+  @IsOptional()
+  @IsString({ message: 'facebookUrl ต้องเป็นข้อความ' })
+  @Length(0, 200, { message: 'facebookUrl ยาวเกิน 200 ตัวอักษร' })
+  facebookUrl?: string;
+
+  /** The company's LinkedIn page - linkedin.com. */
+  @IsOptional()
+  @IsString({ message: 'linkedinUrl ต้องเป็นข้อความ' })
+  @Length(0, 200, { message: 'linkedinUrl ยาวเกิน 200 ตัวอักษร' })
+  linkedinUrl?: string;
+
   /** Where applications go, e.g. hr@company.co.th. */
   @IsOptional()
   @IsString({ message: 'applyEmail ต้องเป็นข้อความ' })

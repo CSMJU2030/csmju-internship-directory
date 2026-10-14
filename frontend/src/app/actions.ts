@@ -90,7 +90,10 @@ function placeBody(formData: FormData) {
     // Empty clears the detail on edit; on add the backend stores nothing for it.
     websiteUrl: text(formData, "websiteUrl"),
     contactPhone: text(formData, "contactPhone"),
+    contactEmail: text(formData, "contactEmail"),
     applyEmail: text(formData, "applyEmail"),
+    facebookUrl: text(formData, "facebookUrl"),
+    linkedinUrl: text(formData, "linkedinUrl"),
     intakePeriod: text(formData, "intakePeriod"),
   };
 }

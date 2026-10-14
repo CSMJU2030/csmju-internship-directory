@@ -49,8 +49,14 @@ model InternshipPlace {
   websiteUrl   String? @map("website_url")
   /// Digits only, an optional leading + (data-dictionary.md 5 Phone: no-hyphen).
   contactPhone String? @map("contact_phone")
+  /// The company's general contact address, e.g. contact@company.co.th.
+  contactEmail String? @map("contact_email")
   /// The address applications go to, e.g. hr@company.co.th.
   applyEmail   String? @map("apply_email")
+  /// The company's Facebook page (facebook.com or fb.com).
+  facebookUrl  String? @map("facebook_url")
+  /// The company's LinkedIn page (linkedin.com).
+  linkedinUrl  String? @map("linkedin_url")
   /// When the place takes interns, in words, e.g. "เปิดรับ ม.ค. - มี.ค. ทุกปี".
   intakePeriod String? @map("intake_period")
 

@@ -8,7 +8,7 @@ import ReportButton from "../../../components/features/ReportButton";
 import { ReviewFields } from "../../../components/features/ReviewForm";
 import Stars from "../../../components/features/Stars";
 import VerifiedBadge from "../../../components/features/VerifiedBadge";
-import { LanguageIcon, OpenInNewIcon, PhoneIcon, VerifiedIcon } from "../../../components/icons";
+import { LanguageIcon, OpenInNewIcon, PhoneIcon, PublicPageIcon, VerifiedIcon, WorkIcon } from "../../../components/icons";
 import { card, link, muted, pageTitle, primaryButton, secondaryButton, sectionTitle, small } from "../../../components/ui";
 import { can, getMe, getPlace, hasSession, isUnauthorized, listTags } from "../../../lib/api";
 import {
@@ -128,7 +128,7 @@ export default async function PlacePage({
       <section className={`${card} space-y-4`}>
         <h2 className={sectionTitle}>ข้อควรระวัง / สวัสดิการ</h2>
         <p className="max-w-prose whitespace-pre-line break-words text-body-md text-on-surface">{p.notes}</p>
-        {(p.websiteUrl || p.contactPhone || p.applyEmail) && (
+        {(p.websiteUrl || p.contactPhone || p.contactEmail || p.applyEmail || p.facebookUrl || p.linkedinUrl) && (
           <ul className="flex flex-col gap-1" aria-label="ช่องทางติดต่อบริษัท">
             {p.websiteUrl && (
               <li>
@@ -146,12 +146,37 @@ export default async function PlacePage({
                 </a>
               </li>
             )}
+            {p.contactEmail && (
+              <li>
+                <a className={link} href={`mailto:${p.contactEmail}`}>
+                  <MailIcon className="h-4 w-4" />
+                  <span className="break-all">{p.contactEmail}</span>
+                  <span className={small}>(อีเมลติดต่อ)</span>
+                </a>
+              </li>
+            )}
             {p.applyEmail && (
               <li>
                 <a className={link} href={`mailto:${p.applyEmail}`}>
                   <MailIcon className="h-4 w-4" />
                   <span className="break-all">{p.applyEmail}</span>
                   <span className={small}>(อีเมลรับสมัคร)</span>
+                </a>
+              </li>
+            )}
+            {p.facebookUrl && (
+              <li>
+                <a className={link} href={p.facebookUrl} target="_blank" rel="noopener noreferrer nofollow">
+                  <PublicPageIcon className="h-4 w-4" />
+                  Facebook Page
+                </a>
+              </li>
+            )}
+            {p.linkedinUrl && (
+              <li>
+                <a className={link} href={p.linkedinUrl} target="_blank" rel="noopener noreferrer nofollow">
+                  <WorkIcon className="h-4 w-4" />
+                  LinkedIn
                 </a>
               </li>
             )}
