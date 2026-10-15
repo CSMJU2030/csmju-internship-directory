@@ -79,3 +79,57 @@ export function OpenInNewIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function FlagIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <path d="M5.5 20.5v-16" />
+      <path d="M5.5 4.5h11l-2 4 2 4h-11" />
+    </svg>
+  );
+}
+
+export function VerifiedIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <path d="M12 3.2 14.3 5l2.9-.2.8 2.8 2.4 1.6-1 2.8 1 2.8-2.4 1.6-.8 2.8-2.9-.2L12 20.8 9.7 19l-2.9.2-.8-2.8-2.4-1.6 1-2.8-1-2.8L6 7.6l.8-2.8 2.9.2L12 3.2Z" />
+      <path d="m8.8 12.1 2.2 2.2 4.2-4.5" />
+    </svg>
+  );
+}
+
+export function LanguageIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.3 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.3-3.5-8.5s1.1-6.1 3.5-8.5Z" />
+    </svg>
+  );
+}
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <path d="M6.6 4.5h2.6l1.3 3.6-1.8 1.2a10 10 0 0 0 4.9 4.9l1.2-1.8 3.6 1.3v2.6a1.6 1.6 0 0 1-1.7 1.6A14.3 14.3 0 0 1 5 6.2a1.6 1.6 0 0 1 1.6-1.7Z" />
+    </svg>
+  );
+}
+
+/** A generic "social page" mark (a page with a thumbs-up) - brand logos are not drawn here. */
+export function PublicPageIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M9 17v-5.5M9 11.5h1.8l1.7-3.3a1 1 0 0 1 1.9.5L14 11h2.6a1 1 0 0 1 1 1.2l-.8 3.8a1 1 0 0 1-1 .8H9" />
+    </svg>
+  );
+}
+
+export function WorkIcon(props: IconProps) {
+  return (
+    <svg {...base} aria-hidden {...props}>
+      <rect x="3.5" y="7.5" width="17" height="12" rx="2" />
+      <path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 12.5h17" />
+    </svg>
+  );
+}

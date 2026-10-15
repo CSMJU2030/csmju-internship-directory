@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import type { components } from "./api-types";
 
+export { REPORT_REASONS, REPORT_STATUS_LABEL, type ReportReason } from "./report-reasons";
+
 /**
  * Server-only client for this subsystem's own backend. The browser never
  * calls the backend with a token of its own: pages and server actions
@@ -24,6 +26,8 @@ export type Review = components["schemas"]["ReviewViewDto"];
 export type PlaceTag = components["schemas"]["PlaceTagDto"];
 export type Province = components["schemas"]["ProvinceDto"];
 export type MyReview = components["schemas"]["MyReviewDto"];
+export type ReviewReport = components["schemas"]["ReviewReportViewDto"];
+
 
 export type SubsystemRole = "STUDENT" | "ALUMNI" | "STAFF" | "ADMIN" | "VIEWER";
 
@@ -65,6 +69,8 @@ export const can = {
   review: (me: Me) => me.subsystemRole !== "VIEWER",
   managePlaces: (me: Me) => me.subsystemRole === "STAFF" || me.subsystemRole === "ADMIN",
   moderateReviews: (me: Me) => me.subsystemRole === "STAFF" || me.subsystemRole === "ADMIN",
+  reportReviews: (me: Me) => me.subsystemRole !== "VIEWER",
+  verifyPlaces: (me: Me) => me.subsystemRole === "STAFF" || me.subsystemRole === "ADMIN",
 };
 
 /**
@@ -122,6 +128,8 @@ export type PlaceQuery = {
   page?: string;
   /** Page size, 1-100 (api-conventions.md); the list asks for 20, the map for 100. */
   limit?: string;
+  /** "true": only places staff verified. */
+  verified?: string;
   /** Sort and measure distance from here instead of the university (rounded, from NearMeButton). */
   nearLat?: string;
   nearLng?: string;
@@ -142,6 +150,14 @@ export const listProvinces = () => call<Province[]>("/api/v1/internship-places/p
 
 /** The signed-in user's own reviews with their places, newest first. */
 export const listMyReviews = () => call<MyReview[]>("/api/v1/internship-places/my-reviews");
+
+/** The moderators' queue of reported reviews (OPEN by default). */
+export function listReports(status?: string, page?: string) {
+  const params = new URLSearchParams({ limit: "20" });
+  if (status) params.set("status", status);
+  if (page) params.set("page", page);
+  return call<ReviewReport[]>(`/api/v1/review-reports?${params.toString()}`);
+}
 
 export const getPlace = (id: string) => call<PlaceDetail>(`/api/v1/internship-places/${encodeURIComponent(id)}`);
 

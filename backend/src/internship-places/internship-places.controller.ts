@@ -8,6 +8,7 @@ import { CollectionResult } from '../common/api-response';
 import { buildPaginationMeta } from '../common/dto/pagination.dto';
 import { ApiEnvelope } from '../openapi/api-envelope.decorator';
 import { CreatePlaceDto } from './dto/create-place.dto';
+import { SetVerificationDto } from './dto/moderation.dto';
 import { DeletedDto, MyReviewDto, PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto } from './dto/place-responses';
 import { QueryPlacesDto } from './dto/query-places.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
@@ -79,6 +80,18 @@ export class InternshipPlacesController {
     @Body() dto: UpdatePlaceDto,
   ): Promise<PlaceDetailDto> {
     return this.places.update(user, id, dto);
+  }
+
+  /** Give or take back the "verified" badge. */
+  @Patch(':id/verification')
+  @RequirePermissions(Permission.PLACE_VERIFY)
+  @ApiEnvelope(PlaceDetailDto)
+  setVerification(
+    @CurrentUser() user: CoreHubIdentity,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetVerificationDto,
+  ): Promise<PlaceDetailDto> {
+    return this.places.setVerification(user, id, dto);
   }
 
   @Delete(':id')

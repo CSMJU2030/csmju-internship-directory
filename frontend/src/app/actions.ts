@@ -87,6 +87,14 @@ function placeBody(formData: FormData) {
     workHours: text(formData, "workHours"),
     notes: text(formData, "notes"),
     tags: placeTags(formData),
+    // Empty clears the detail on edit; on add the backend stores nothing for it.
+    websiteUrl: text(formData, "websiteUrl"),
+    contactPhone: text(formData, "contactPhone"),
+    contactEmail: text(formData, "contactEmail"),
+    applyEmail: text(formData, "applyEmail"),
+    facebookUrl: text(formData, "facebookUrl"),
+    linkedinUrl: text(formData, "linkedinUrl"),
+    intakePeriod: text(formData, "intakePeriod"),
   };
 }
 
@@ -171,4 +179,38 @@ export async function deleteReview(formData: FormData) {
     { method: "DELETE" },
   );
   back(`/internship-places/${encodeURIComponent(placeId)}`, result, "ลบรีวิวแล้ว");
+}
+
+const reviewPath = (formData: FormData) =>
+  `/api/v1/internship-places/${encodeURIComponent(text(formData, "placeId"))}/reviews/${encodeURIComponent(text(formData, "reviewId"))}`;
+
+/** Where a moderation form sends the user back to: the queue or the place. */
+const returnPath = (formData: FormData) =>
+  text(formData, "returnTo") === "queue" ? "/review-reports" : `/internship-places/${encodeURIComponent(text(formData, "placeId"))}`;
+
+export async function reportReview(formData: FormData) {
+  const result = await call(`${reviewPath(formData)}/reports`, {
+    method: "POST",
+    body: { reason: text(formData, "reason"), detail: optionalText(formData, "detail") },
+  });
+  back(returnPath(formData), result, "ส่งรายงานแล้ว ผู้ดูแลจะตรวจสอบ ขอบคุณที่ช่วยดูแลชุมชน");
+}
+
+export async function setReviewVisibility(formData: FormData) {
+  const isHidden = text(formData, "isHidden") === "true";
+  const result = await call(`${reviewPath(formData)}/visibility`, {
+    method: "PATCH",
+    body: { isHidden, reason: optionalText(formData, "reason") },
+  });
+  back(returnPath(formData), result, isHidden ? "ซ่อนรีวิวแล้ว" : "คงรีวิวไว้และปิดรายงานแล้ว");
+}
+
+export async function setVerification(formData: FormData) {
+  const id = text(formData, "id");
+  const isVerified = text(formData, "isVerified") === "true";
+  const result = await call(`/api/v1/internship-places/${encodeURIComponent(id)}/verification`, {
+    method: "PATCH",
+    body: { isVerified },
+  });
+  back(`/internship-places/${encodeURIComponent(id)}`, result, isVerified ? "ยืนยันสถานที่แล้ว" : "ยกเลิกการยืนยันแล้ว");
 }

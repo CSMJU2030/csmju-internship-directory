@@ -2,11 +2,16 @@ import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ROUTES_OUTSIDE_API_PREFIX, configureApp } from './app-setup';
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: false });
+  // JSON bodies only - no urlencoded parser, so a form posted from another
+  // site never becomes a body here (JsonBodyGuard refuses it too).
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: false, bodyParser: false });
+  app.useBodyParser('json');
+  app.disable('x-powered-by');
   const config = app.get(ConfigService);
 
   // /api/health and /api/v1/... (spec §20-§21). The SSO endpoints

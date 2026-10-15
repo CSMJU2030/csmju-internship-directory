@@ -11,6 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { CUSTOM_TAG_LENGTH, MAX_TAGS_PER_PLACE } from '../tags';
+import { PlaceContactDto } from './place-contact.dto';
 
 /** 10,000 baht a day, in satang. */
 export const MAX_DAILY_ALLOWANCE_SATANG = 1_000_000;
@@ -19,7 +20,7 @@ export const MAX_DAILY_ALLOWANCE_SATANG = 1_000_000;
  * Who adds the place comes from the verified token, never from the body - the
  * ValidationPipe's forbidNonWhitelisted rejects a smuggled coreUserId.
  */
-export class CreatePlaceDto {
+export class CreatePlaceDto extends PlaceContactDto {
   @IsString({ message: 'name ต้องเป็นข้อความ' })
   @Length(2, 120, { message: 'name ต้องยาว 2-120 ตัวอักษร' })
   name!: string;

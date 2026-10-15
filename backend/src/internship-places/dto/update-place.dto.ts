@@ -11,10 +11,11 @@ import {
   Min,
 } from 'class-validator';
 import { CUSTOM_TAG_LENGTH, MAX_TAGS_PER_PLACE } from '../tags';
+import { PlaceContactDto } from './place-contact.dto';
 import { MAX_DAILY_ALLOWANCE_SATANG } from './create-place.dto';
 
 /** PATCH: send only the fields to change (api-conventions.md). */
-export class UpdatePlaceDto {
+export class UpdatePlaceDto extends PlaceContactDto {
   @IsOptional()
   @IsString({ message: 'name ต้องเป็นข้อความ' })
   @Length(2, 120, { message: 'name ต้องยาว 2-120 ตัวอักษร' })

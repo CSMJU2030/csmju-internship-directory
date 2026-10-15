@@ -23,6 +23,7 @@ function navFor(me: Me): NavItem[] {
   return [
     { label: "สถานที่ฝึกงาน", labelEn: "Places", href: "/", icon: "school" },
     ...(can.review(me) ? [{ label: "รีวิวของฉัน", labelEn: "My reviews", href: "/my-reviews", icon: "menu-book" as const }] : []),
+    ...(can.moderateReviews(me) ? [{ label: "รีวิวที่ถูกรายงาน", labelEn: "Reported reviews", href: "/review-reports", icon: "campaign" as const }] : []),
   ];
 }
 

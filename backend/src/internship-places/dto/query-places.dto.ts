@@ -34,6 +34,11 @@ export class QueryPlacesDto extends PaginationQueryDto {
   @Length(1, 40, { message: 'tag ต้องยาว 1-40 ตัวอักษร' })
   tag?: string;
 
+  /** `true`: only places staff verified. */
+  @IsOptional()
+  @IsIn(['true'], { message: 'verified ต้องเป็น true หรือไม่ส่ง' })
+  verified?: 'true';
+
   /** Ranking (default), average score, allowance, review count, distance, newest or name. */
   @IsOptional()
   @IsIn(PLACE_SORTS as unknown as string[], { message: `sort ต้องเป็น ${PLACE_SORTS.join(', ')}` })

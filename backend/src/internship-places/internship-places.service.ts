@@ -7,10 +7,20 @@ import { PeopleService } from '../core-hub/people.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateReportDto, QueryReportsDto, SetReviewVisibilityDto, SetVerificationDto } from './dto/moderation.dto';
+import { PlaceContactDto } from './dto/place-contact.dto';
 import { QueryPlacesDto } from './dto/query-places.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { MyReviewDto, PlaceDetailDto, PlaceSummaryDto, PlaceTagDto, ProvinceDto, ReviewViewDto } from './dto/place-responses';
+import {
+  MyReviewDto,
+  PlaceDetailDto,
+  PlaceSummaryDto,
+  PlaceTagDto,
+  ProvinceDto,
+  ReviewReportViewDto,
+  ReviewViewDto,
+} from './dto/place-responses';
 import { PLACE_TAGS, isPresetTag, normalizeTags, tagMatchKey } from './tags';
 import {
   MJU_LOCATION,
@@ -35,6 +45,17 @@ interface Ranking {
   ranks: Map<string, number>;
 }
 
+/** What the caller knows about reports on the reviews being shown. */
+interface ReportContext {
+  /** Reviews the caller has an open report on. */
+  reportedByMe: Set<string>;
+  /** Review id -> open reports; filled for moderators only. */
+  openCounts?: Map<string, number>;
+}
+
+/** Only reviews nobody hid count in scores, rankings and search. */
+const VISIBLE = { isHidden: false } as const;
+
 /**
  * Internship places and their reviews.
  *
@@ -45,6 +66,9 @@ interface Ranking {
  * Average, rank and filters on them are computed here rather than in SQL: the
  * directory holds hundreds of places, and the ranking needs every review's
  * score anyway (its prior is the mean of the whole directory).
+ *
+ * A review a moderator hid stays in the database for the record but counts in
+ * no score; only its author and moderators still see it.
  */
 @Injectable()
 export class InternshipPlacesService {
@@ -56,7 +80,7 @@ export class InternshipPlacesService {
   async findAll(query: QueryPlacesDto): Promise<{ items: PlaceSummary[]; total: number }> {
     const [places, scores] = await Promise.all([
       this.prisma.internshipPlace.findMany({ orderBy: { createdAt: 'desc' } }),
-      this.prisma.placeReview.findMany({ select: { placeId: true, score: true } }),
+      this.prisma.placeReview.findMany({ where: VISIBLE, select: { placeId: true, score: true } }),
     ]);
 
     // Ranked over the whole directory, before any filter, so a place keeps its rank.
@@ -72,6 +96,7 @@ export class InternshipPlacesService {
       .filter((place) => query.allowance !== 'paid' || place.dailyAllowanceSatang > 0)
       .filter((place) => query.allowance !== 'free' || place.dailyAllowanceSatang === 0)
       .filter((place) => !tagKey || place.tags.some((tag) => tagMatchKey(tag) === tagKey))
+      .filter((place) => !query.verified || place.isVerified)
       .map((place) => this.summarize(place, ranking, near));
 
     if (query.q) {
@@ -135,17 +160,19 @@ export class InternshipPlacesService {
       .sort((a, b) => b.placeCount - a.placeCount || a.name.localeCompare(b.name, 'th'));
   }
 
-  /** The caller's own reviews, newest first - empty for a role that cannot review. */
+  /** The caller's own reviews, newest first, hidden ones included - empty for a role that cannot review. */
   async listMyReviews(user: CoreHubIdentity): Promise<MyReviewDto[]> {
     const [reviews, places] = await Promise.all([
       this.prisma.placeReview.findMany({ where: { coreUserId: user.id }, orderBy: { createdAt: 'desc' } }),
       this.prisma.internshipPlace.findMany({ select: { id: true, name: true, province: true } }),
     ]);
     const byId = new Map(places.map((place) => [place.id, place]));
+    // Nobody reports their own review, so there is nothing to look up.
+    const context: ReportContext = { reportedByMe: new Set() };
     return reviews.flatMap((review) => {
       const place = byId.get(review.placeId);
       if (!place) return [];
-      return [{ ...this.reviewView(user, review), placeId: place.id, placeName: place.name, placeProvince: place.province }];
+      return [{ ...this.reviewView(user, review, context), placeId: place.id, placeName: place.name, placeProvince: place.province }];
     });
   }
 
@@ -153,21 +180,25 @@ export class InternshipPlacesService {
     const place = await this.load(id);
     const [places, scores, reviews] = await Promise.all([
       this.prisma.internshipPlace.findMany({ select: { id: true, name: true } }),
-      this.prisma.placeReview.findMany({ select: { placeId: true, score: true } }),
+      this.prisma.placeReview.findMany({ where: VISIBLE, select: { placeId: true, score: true } }),
       this.prisma.placeReview.findMany({ where: { placeId: id }, orderBy: { createdAt: 'desc' } }),
     ]);
 
     const summary = this.summarize(place, this.ranking(places, scores), MJU_LOCATION);
     const scoreDistribution = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
-    for (const review of reviews) {
+    for (const review of reviews.filter((review) => !review.isHidden)) {
       scoreDistribution[String(review.score) as keyof typeof scoreDistribution] += 1;
     }
     const mine = reviews.find((review) => review.coreUserId === user.id);
 
+    const moderator = can(user.subsystemRole, Permission.REVIEW_MODERATE);
+    const shown = reviews.filter((review) => !review.isHidden || moderator || review.coreUserId === user.id);
+    const context = await this.reportContext(user, shown.map((review) => review.id));
+
     return {
       ...summary,
       scoreDistribution,
-      reviews: reviews.map((review) => this.reviewView(user, review)),
+      reviews: shown.map((review) => this.reviewView(user, review, context)),
       myReviewId: mine?.id ?? null,
     };
   }
@@ -177,6 +208,7 @@ export class InternshipPlacesService {
     const notes = this.requireText(dto.notes, 5, 'ข้อควรระวัง/สวัสดิการ');
     const nameKey = this.nameKeyOf(name);
     await this.assertNameFree(nameKey);
+    const contact = this.cleanContact(dto);
 
     const place = await this.prisma.internshipPlace.create({
       data: {
@@ -189,6 +221,13 @@ export class InternshipPlacesService {
         workHours: dto.workHours?.trim() || null,
         notes,
         tags: normalizeTags(dto.tags ?? []),
+        websiteUrl: contact.websiteUrl ?? null,
+        contactPhone: contact.contactPhone ?? null,
+        contactEmail: contact.contactEmail ?? null,
+        applyEmail: contact.applyEmail ?? null,
+        facebookUrl: contact.facebookUrl ?? null,
+        linkedinUrl: contact.linkedinUrl ?? null,
+        intakePeriod: contact.intakePeriod ?? null,
         createdByCoreUserId: user.id,
       },
     });
@@ -213,15 +252,30 @@ export class InternshipPlacesService {
     if (dto.workHours !== undefined) data.workHours = dto.workHours.trim() || null;
     if (dto.notes !== undefined) data.notes = this.requireText(dto.notes, 5, 'ข้อควรระวัง/สวัสดิการ');
     if (dto.tags !== undefined) data.tags = normalizeTags(dto.tags);
+    Object.assign(data, this.cleanContact(dto));
 
     await this.prisma.internshipPlace.update({ where: { id }, data });
     return this.findOne(user, id);
   }
 
-  /** Removes the place and every review of it. */
+  /** Staff give the "verified" badge, or take it back. */
+  async setVerification(user: CoreHubIdentity, id: string, dto: SetVerificationDto): Promise<PlaceDetail> {
+    await this.load(id);
+    await this.prisma.internshipPlace.update({
+      where: { id },
+      data: dto.isVerified
+        ? { isVerified: true, verifiedAt: new Date(), verifiedByCoreUserId: user.id }
+        : { isVerified: false, verifiedAt: null, verifiedByCoreUserId: null },
+    });
+    return this.findOne(user, id);
+  }
+
+  /** Removes the place, every review of it and their reports. */
   async remove(id: string): Promise<{ id: string; deleted: true }> {
     await this.load(id);
+    const reviews = await this.prisma.placeReview.findMany({ where: { placeId: id }, select: { id: true } });
     await this.prisma.$transaction([
+      this.prisma.reviewReport.deleteMany({ where: { reviewId: { in: reviews.map((review) => review.id) } } }),
       this.prisma.placeReview.deleteMany({ where: { placeId: id } }),
       this.prisma.internshipPlace.delete({ where: { id } }),
     ]);
@@ -267,7 +321,7 @@ export class InternshipPlacesService {
         },
       });
     });
-    return this.reviewView(user, review);
+    return this.reviewView(user, review, await this.reportContext(user, [review.id]));
   }
 
   /** Only the author edits a review - moderators remove, they do not rewrite. */
@@ -290,10 +344,10 @@ export class InternshipPlacesService {
     if (dto.internshipYear !== undefined) data.internshipYear = dto.internshipYear;
 
     const updated = await this.prisma.placeReview.update({ where: { id: reviewId }, data });
-    return this.reviewView(user, updated);
+    return this.reviewView(user, updated, await this.reportContext(user, [reviewId]));
   }
 
-  /** The author removes their own review; staff may remove anyone's. */
+  /** The author removes their own review; staff may remove anyone's. Its reports go with it. */
   async removeReview(
     user: CoreHubIdentity,
     placeId: string,
@@ -301,11 +355,121 @@ export class InternshipPlacesService {
   ): Promise<{ id: string; deleted: true }> {
     const review = await this.loadReview(placeId, reviewId);
     const isAuthor = review.coreUserId === user.id;
-    if (!isAuthor && !can(user.subsystemRole, Permission.REVIEW_DELETE_ANY)) {
+    const moderator = can(user.subsystemRole, Permission.REVIEW_DELETE_ANY);
+    if (!isAuthor && !moderator) {
       throw AppException.forbidden('ลบได้เฉพาะรีวิวของตัวเอง');
     }
-    await this.prisma.placeReview.delete({ where: { id: reviewId } });
+    // Deleting a hidden review would free the one-review slot, and the same
+    // text could be posted again unhidden - so its author keeps it.
+    if (review.isHidden && !moderator) {
+      throw AppException.forbidden('รีวิวนี้ถูกซ่อนโดยผู้ดูแล ลบหรือโพสต์ใหม่แทนไม่ได้ ติดต่อผู้ดูแลถ้าเห็นว่าไม่ถูกต้อง');
+    }
+    await this.prisma.$transaction([
+      this.prisma.reviewReport.deleteMany({ where: { reviewId } }),
+      this.prisma.placeReview.delete({ where: { id: reviewId } }),
+    ]);
     return { id: reviewId, deleted: true };
+  }
+
+  /**
+   * Flag someone else's review. A person has at most one open report per
+   * review - the same advisory lock as one review per person per place.
+   */
+  async reportReview(
+    user: CoreHubIdentity,
+    placeId: string,
+    reviewId: string,
+    dto: CreateReportDto,
+  ): Promise<ReviewView> {
+    const review = await this.loadReview(placeId, reviewId);
+    if (review.coreUserId === user.id) {
+      throw AppException.badRequest('รายงานรีวิวของตัวเองไม่ได้ ลบหรือแก้ไขแทนได้');
+    }
+    if (review.isHidden) {
+      throw AppException.conflict('รีวิวนี้ถูกซ่อนแล้ว');
+    }
+
+    const lockKey = `report:${reviewId}:${user.id}`;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+      const existing = await tx.reviewReport.findFirst({
+        where: { reviewId, coreUserId: user.id, status: 'OPEN' },
+      });
+      if (existing) {
+        throw AppException.conflict('คุณรายงานรีวิวนี้แล้ว รอผู้ดูแลตรวจสอบ', { reportId: existing.id });
+      }
+      await tx.reviewReport.create({
+        data: { reviewId, coreUserId: user.id, reason: dto.reason, detail: dto.detail?.trim() || null },
+      });
+    });
+    return this.reviewView(user, review, await this.reportContext(user, [reviewId]));
+  }
+
+  /**
+   * Hide a review, or show it again. Either way its open reports are settled:
+   * ACTION_TAKEN when it is hidden, DISMISSED when it stays.
+   */
+  async setReviewVisibility(
+    user: CoreHubIdentity,
+    placeId: string,
+    reviewId: string,
+    dto: SetReviewVisibilityDto,
+  ): Promise<ReviewView> {
+    await this.loadReview(placeId, reviewId);
+    const now = new Date();
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.placeReview.update({
+        where: { id: reviewId },
+        data: dto.isHidden
+          ? { isHidden: true, hiddenAt: now, hiddenByCoreUserId: user.id, hiddenReason: dto.reason?.trim() || null }
+          : { isHidden: false, hiddenAt: null, hiddenByCoreUserId: null, hiddenReason: null },
+      }),
+      this.prisma.reviewReport.updateMany({
+        where: { reviewId, status: 'OPEN' },
+        data: { status: dto.isHidden ? 'ACTION_TAKEN' : 'DISMISSED', resolvedAt: now, resolvedByCoreUserId: user.id },
+      }),
+    ]);
+    return this.reviewView(user, updated, await this.reportContext(user, [reviewId]));
+  }
+
+  /** The moderators' queue: reports with one status (OPEN by default), newest first. */
+  async listReports(
+    user: CoreHubIdentity,
+    query: QueryReportsDto,
+  ): Promise<{ items: ReviewReportViewDto[]; total: number }> {
+    const status = query.status ?? 'OPEN';
+    const reports = await this.prisma.reviewReport.findMany({ where: { status }, orderBy: { createdAt: 'desc' } });
+    const reviewIds = [...new Set(reports.map((report) => report.reviewId))];
+    const reviews = await this.prisma.placeReview.findMany({ where: { id: { in: reviewIds } } });
+    const places = await this.prisma.internshipPlace.findMany({
+      where: { id: { in: [...new Set(reviews.map((review) => review.placeId))] } },
+      select: { id: true, name: true },
+    });
+    const reviewById = new Map(reviews.map((review) => [review.id, review]));
+    const placeName = new Map(places.map((place) => [place.id, place.name]));
+    const perReview = new Map<string, number>();
+    for (const report of reports) perReview.set(report.reviewId, (perReview.get(report.reviewId) ?? 0) + 1);
+    const context = await this.reportContext(user, reviewIds);
+
+    const page = reports.slice(query.skip, query.skip + query.take).flatMap((report) => {
+      const review = reviewById.get(report.reviewId);
+      if (!review) return [];
+      return [
+        {
+          id: report.id,
+          reason: report.reason,
+          detail: report.detail,
+          status: report.status,
+          reviewReportCount: perReview.get(report.reviewId) ?? 1,
+          placeId: review.placeId,
+          placeName: placeName.get(review.placeId) ?? '',
+          review: this.reviewView(user, review, context),
+          resolvedAt: report.resolvedAt,
+          createdAt: report.createdAt,
+        },
+      ];
+    });
+    return { items: page, total: reports.length };
   }
 
   // ------------------------------------------------------------------ helpers
@@ -362,9 +526,106 @@ export class InternshipPlacesService {
     return province.trim().replace(/^จังหวัด\s*/u, '');
   }
 
+  /**
+   * The company's contact details in stored form. A field left out stays as it
+   * is (absent from the result); an empty text clears it (null).
+   */
+  private cleanContact(dto: PlaceContactDto): Partial<Record<keyof PlaceContactDto, string | null>> {
+    const out: Partial<Record<keyof PlaceContactDto, string | null>> = {};
+    const given = (value: string | undefined) => (value === undefined ? undefined : value.trim());
+
+    const website = given(dto.websiteUrl);
+    if (website !== undefined) out.websiteUrl = website ? this.cleanWebsite(website) : null;
+
+    const facebook = given(dto.facebookUrl);
+    if (facebook !== undefined) {
+      out.facebookUrl = facebook ? this.cleanWebsite(facebook, ['facebook.com', 'fb.com'], 'Facebook') : null;
+    }
+
+    const linkedin = given(dto.linkedinUrl);
+    if (linkedin !== undefined) {
+      out.linkedinUrl = linkedin ? this.cleanWebsite(linkedin, ['linkedin.com'], 'LinkedIn') : null;
+    }
+
+    const phone = given(dto.contactPhone);
+    if (phone !== undefined) {
+      // data-dictionary.md 5: phone numbers are stored without hyphens.
+      const digits = phone.replace(/[\s\-().]/g, '');
+      if (digits && !/^\+?\d{9,15}$/.test(digits)) {
+        throw AppException.badRequest('เบอร์ติดต่อต้องเป็นตัวเลข 9-15 หลัก (ขึ้นต้นด้วย + ได้)');
+      }
+      out.contactPhone = digits || null;
+    }
+
+    const applyEmail = given(dto.applyEmail);
+    if (applyEmail !== undefined) out.applyEmail = this.cleanEmail(applyEmail, 'อีเมลรับสมัคร');
+
+    const contactEmail = given(dto.contactEmail);
+    if (contactEmail !== undefined) out.contactEmail = this.cleanEmail(contactEmail, 'อีเมลติดต่อ');
+
+    const intake = given(dto.intakePeriod);
+    if (intake !== undefined) out.intakePeriod = intake || null;
+    return out;
+  }
+
+  /**
+   * An empty text clears it; otherwise a plain address, stored lower-case.
+   * The page builds `mailto:` from it, so `?`, `&`, `=` and `%` are refused -
+   * "hr@x.co?bcc=..." would copy every application to someone else.
+   */
+  private cleanEmail(value: string, label: string): string | null {
+    if (!value) return null;
+    if (!/^[a-z0-9._+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(value)) {
+      throw AppException.badRequest(`${label}ไม่ถูกต้อง`);
+    }
+    return value.toLowerCase();
+  }
+
+  /**
+   * http(s) only - the page puts it in a link, so never `javascript:` or
+   * `data:`. "www.example.com" becomes "https://www.example.com". With
+   * `hosts`, the address must be on one of them or a subdomain (m.facebook.com).
+   */
+  private cleanWebsite(value: string, hosts?: string[], label = 'เว็บไซต์'): string {
+    const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value}`;
+    let url: URL;
+    try {
+      url = new URL(withScheme);
+    } catch {
+      throw AppException.badRequest(`${label}ไม่ถูกต้อง`);
+    }
+    if ((url.protocol !== 'https:' && url.protocol !== 'http:') || !url.hostname.includes('.') || url.username || url.password) {
+      throw AppException.badRequest(`${label}ต้องขึ้นต้นด้วย http:// หรือ https://`);
+    }
+    const host = url.hostname.toLowerCase();
+    if (hosts && !hosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`))) {
+      throw AppException.badRequest(`${label}ต้องเป็นลิงก์ของ ${hosts.join(' หรือ ')}`);
+    }
+    // Encoded by URL (no spaces or quotes), without the "/" it adds to a bare host.
+    return url.pathname === '/' && !url.search && !url.hash && !withScheme.endsWith('/') ? url.toString().slice(0, -1) : url.toString();
+  }
+
+  /** Which of these reviews the caller reported, and - for moderators - how many open reports each has. */
+  private async reportContext(user: CoreHubIdentity, reviewIds: string[]): Promise<ReportContext> {
+    if (reviewIds.length === 0) return { reportedByMe: new Set() };
+    const open = await this.prisma.reviewReport.findMany({
+      where: { reviewId: { in: reviewIds }, status: 'OPEN' },
+      select: { reviewId: true, coreUserId: true },
+    });
+    const context: ReportContext = {
+      reportedByMe: new Set(open.filter((report) => report.coreUserId === user.id).map((report) => report.reviewId)),
+    };
+    if (can(user.subsystemRole, Permission.REVIEW_MODERATE)) {
+      context.openCounts = new Map();
+      for (const { reviewId } of open) context.openCounts.set(reviewId, (context.openCounts.get(reviewId) ?? 0) + 1);
+    }
+    return context;
+  }
+
   private async placeIdsWithCommentMatching(needle: string): Promise<Set<string>> {
     const reviews = await this.prisma.placeReview.findMany({
       where: {
+        ...VISIBLE,
         OR: [
           { comment: { contains: needle, mode: 'insensitive' } },
           { position: { contains: needle, mode: 'insensitive' } },
@@ -415,6 +676,15 @@ export class InternshipPlacesService {
       workHours: place.workHours,
       notes: place.notes,
       tags: place.tags,
+      websiteUrl: place.websiteUrl,
+      contactPhone: place.contactPhone,
+      contactEmail: place.contactEmail,
+      applyEmail: place.applyEmail,
+      facebookUrl: place.facebookUrl,
+      linkedinUrl: place.linkedinUrl,
+      intakePeriod: place.intakePeriod,
+      isVerified: place.isVerified,
+      verifiedAt: place.verifiedAt,
       averageScore: averageScore(own),
       reviewCount: own.count,
       rank: ranking.ranks.get(place.id) ?? ranking.ranks.size + 1,
@@ -424,7 +694,7 @@ export class InternshipPlacesService {
     };
   }
 
-  private reviewView(user: CoreHubIdentity, review: PlaceReview): ReviewView {
+  private reviewView(user: CoreHubIdentity, review: PlaceReview, context: ReportContext): ReviewView {
     return {
       id: review.id,
       score: review.score,
@@ -432,6 +702,10 @@ export class InternshipPlacesService {
       position: review.position,
       internshipYear: review.internshipYear,
       isMine: review.coreUserId === user.id,
+      isHidden: review.isHidden,
+      hiddenReason: review.hiddenReason,
+      isReportedByMe: context.reportedByMe.has(review.id),
+      ...(context.openCounts ? { openReportCount: context.openCounts.get(review.id) ?? 0 } : {}),
       ...(can(user.subsystemRole, Permission.REVIEW_DELETE_ANY)
         ? { personCode: review.personCode }
         : {}),
